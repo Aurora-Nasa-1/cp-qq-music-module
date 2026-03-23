@@ -25,9 +25,9 @@
 
 use std::marker::PhantomData;
 
-use super::utils::{netease_token, tencent_token, validate_auth_platform};
+use super::utils::{netease_token, require_keyword, tencent_token, validate_auth_platform};
 use super::{LoginTokenRef, MusicClient};
-use crate::error::{MusicClientError, MusicClientResult};
+use crate::error::MusicClientResult;
 use crate::models::{
     Platform, SearchAlbumResult, SearchArtistResult, SearchPlaylistResult, SearchSongResult,
 };
@@ -83,7 +83,7 @@ impl<'a, K> SearchRequest<'a, K> {
         }
     }
 
-    /// 设置搜索关键词（必填）。
+    /// 设置搜索关键词（必填且不能为空字符串）。
     pub fn keyword(mut self, keyword: impl Into<String>) -> Self {
         self.keyword = Some(keyword.into());
         self
@@ -154,12 +154,12 @@ impl<'a> SearchRequest<'a, SearchKind> {
     ///
     /// # 前置条件
     ///
-    /// - 需要先通过 [`Self::keyword`] 设置非空关键词。
+    /// - 需要先通过 [`Self::keyword`] 设置非空关键词（去除首尾空白后不能为空）。
     /// - 若调用过 [`Self::login`]，其 token 所属平台必须与 [`Self::platform`] 一致。
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword`
+    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword` 为空字符串
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     ///
@@ -174,7 +174,7 @@ impl<'a> SearchRequest<'a, SearchKind> {
     /// # }
     /// ```
     pub async fn send(self) -> MusicClientResult<SearchSongResult> {
-        let keyword = self.keyword.as_deref().ok_or(MusicClientError::MissingKeyword)?;
+        let keyword = require_keyword(self.keyword.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => {
@@ -198,17 +198,17 @@ impl<'a> SearchRequest<'a, SearchSongKind> {
     ///
     /// # 前置条件
     ///
-    /// - 需要先通过 [`SearchRequest::keyword`] 设置非空关键词。
+    /// - 需要先通过 [`SearchRequest::keyword`] 设置非空关键词（去除首尾空白后不能为空）。
     /// - 若调用过 [`SearchRequest::login`]，其 token 所属平台必须与 [`SearchRequest::platform`]
     ///   一致。
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword`
+    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword` 为空字符串
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<SearchSongResult> {
-        let keyword = self.keyword.as_deref().ok_or(MusicClientError::MissingKeyword)?;
+        let keyword = require_keyword(self.keyword.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => {
@@ -232,17 +232,17 @@ impl<'a> SearchRequest<'a, SearchArtistKind> {
     ///
     /// # 前置条件
     ///
-    /// - 需要先通过 [`SearchRequest::keyword`] 设置非空关键词。
+    /// - 需要先通过 [`SearchRequest::keyword`] 设置非空关键词（去除首尾空白后不能为空）。
     /// - 若调用过 [`SearchRequest::login`]，其 token 所属平台必须与 [`SearchRequest::platform`]
     ///   一致。
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword`
+    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword` 为空字符串
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<SearchArtistResult> {
-        let keyword = self.keyword.as_deref().ok_or(MusicClientError::MissingKeyword)?;
+        let keyword = require_keyword(self.keyword.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => {
@@ -266,17 +266,17 @@ impl<'a> SearchRequest<'a, SearchAlbumKind> {
     ///
     /// # 前置条件
     ///
-    /// - 需要先通过 [`SearchRequest::keyword`] 设置非空关键词。
+    /// - 需要先通过 [`SearchRequest::keyword`] 设置非空关键词（去除首尾空白后不能为空）。
     /// - 若调用过 [`SearchRequest::login`]，其 token 所属平台必须与 [`SearchRequest::platform`]
     ///   一致。
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword`
+    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword` 为空字符串
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<SearchAlbumResult> {
-        let keyword = self.keyword.as_deref().ok_or(MusicClientError::MissingKeyword)?;
+        let keyword = require_keyword(self.keyword.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => {
@@ -300,17 +300,17 @@ impl<'a> SearchRequest<'a, SearchPlaylistKind> {
     ///
     /// # 前置条件
     ///
-    /// - 需要先通过 [`SearchRequest::keyword`] 设置非空关键词。
+    /// - 需要先通过 [`SearchRequest::keyword`] 设置非空关键词（去除首尾空白后不能为空）。
     /// - 若调用过 [`SearchRequest::login`]，其 token 所属平台必须与 [`SearchRequest::platform`]
     ///   一致。
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword`
+    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword` 为空字符串
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<SearchPlaylistResult> {
-        let keyword = self.keyword.as_deref().ok_or(MusicClientError::MissingKeyword)?;
+        let keyword = require_keyword(self.keyword.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => {

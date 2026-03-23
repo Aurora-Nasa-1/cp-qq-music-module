@@ -18,9 +18,9 @@
 
 use std::marker::PhantomData;
 
-use super::utils::{netease_token, tencent_token, validate_auth_platform};
+use super::utils::{netease_token, require_id, tencent_token, validate_auth_platform};
 use super::{LoginTokenRef, MusicClient};
-use crate::error::{MusicClientError, MusicClientResult};
+use crate::error::MusicClientResult;
 use crate::models::{LyricResult, Platform, SongQuality, UrlResult};
 
 /// 播放域根类型态标记。
@@ -99,7 +99,7 @@ impl<'a> PlaybackRequest<'a, PlaybackKind> {
 }
 
 impl<'a> PlaybackRequest<'a, PlaybackLyricKind> {
-    /// 设置歌曲 ID（必填）。
+    /// 设置歌曲 ID（必填且不能为空字符串）。
     pub fn id(mut self, id: impl Into<String>) -> Self {
         self.id = Some(id.into());
         self
@@ -115,11 +115,11 @@ impl<'a> PlaybackRequest<'a, PlaybackLyricKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingId`] - 未设置歌曲 `id`
+    /// - [`MusicClientError::MissingId`] - 未设置歌曲 `id` 或 `id` 为空字符串
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<LyricResult> {
-        let id = self.id.as_deref().ok_or(MusicClientError::MissingId)?;
+        let id = require_id(self.id.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => self.client.netease.get_lyric(id, netease_token(self.token)).await,
@@ -129,7 +129,7 @@ impl<'a> PlaybackRequest<'a, PlaybackLyricKind> {
 }
 
 impl<'a> PlaybackRequest<'a, PlaybackUrlKind> {
-    /// 设置歌曲 ID（必填）。
+    /// 设置歌曲 ID（必填且不能为空字符串）。
     pub fn id(mut self, id: impl Into<String>) -> Self {
         self.id = Some(id.into());
         self
@@ -152,11 +152,11 @@ impl<'a> PlaybackRequest<'a, PlaybackUrlKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingId`] - 未设置歌曲 `id`
+    /// - [`MusicClientError::MissingId`] - 未设置歌曲 `id` 或 `id` 为空字符串
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<UrlResult> {
-        let id = self.id.as_deref().ok_or(MusicClientError::MissingId)?;
+        let id = require_id(self.id.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         let netease_token_ref = netease_token(self.token);
         let tencent_token_ref = tencent_token(self.token);

@@ -1,6 +1,8 @@
 use super::*;
 use crate::error::MusicClientError;
-use crate::models::{LoginStatus, LoginToken, Platform, SongQuality, TencentLoginToken};
+use crate::models::{
+    LoginStatus, LoginToken, NeteaseLoginToken, Platform, SongQuality, TencentLoginToken,
+};
 
 const JIANG_NAN_SONG_ID: &str = "108914";
 const JJ_ARTIST_ID: &str = "3684";
@@ -19,10 +21,21 @@ fn mock_tencent_token() -> TencentLoginToken {
     }
 }
 
+fn mock_netease_token() -> NeteaseLoginToken {
+    NeteaseLoginToken::new("music_u", "music_r_u", "csrf", None)
+}
+
 #[tokio::test(flavor = "current_thread")]
 async fn search_requires_keyword() {
     let client = MusicClient::new();
     let err = client.search().send().await.expect_err("missing keyword should fail");
+    assert!(matches!(err, MusicClientError::MissingKeyword));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn search_rejects_empty_keyword() {
+    let client = MusicClient::new();
+    let err = client.search().keyword("   ").send().await.expect_err("empty keyword should fail");
     assert!(matches!(err, MusicClientError::MissingKeyword));
 }
 
@@ -44,6 +57,28 @@ async fn search_rejects_platform_token_mismatch() {
         MusicClientError::AuthTokenPlatformMismatch {
             expected_platform: "netease",
             token_platform: "tencent",
+        }
+    ));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn search_rejects_platform_token_mismatch_reverse() {
+    let client = MusicClient::new();
+    let netease_token = mock_netease_token();
+    let err = client
+        .search()
+        .keyword("江南")
+        .platform(Platform::Tencent)
+        .login(&netease_token)
+        .send()
+        .await
+        .expect_err("netease token on tencent platform should fail");
+
+    assert!(matches!(
+        err,
+        MusicClientError::AuthTokenPlatformMismatch {
+            expected_platform: "tencent",
+            token_platform: "netease",
         }
     ));
 }
@@ -124,6 +159,20 @@ async fn detail_requires_id() {
 }
 
 #[tokio::test(flavor = "current_thread")]
+async fn detail_rejects_empty_id() {
+    let client = MusicClient::new();
+    let err = client.detail().artist().id("   ").send().await.expect_err("empty id should fail");
+    assert!(matches!(err, MusicClientError::MissingId));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn detail_album_rejects_empty_id() {
+    let client = MusicClient::new();
+    let err = client.detail().album().id("").send().await.expect_err("empty id should fail");
+    assert!(matches!(err, MusicClientError::MissingId));
+}
+
+#[tokio::test(flavor = "current_thread")]
 async fn detail_toplist_requires_id() {
     let client = MusicClient::new();
     let err = client.detail().toplist().send().await.expect_err("missing id should fail");
@@ -135,6 +184,19 @@ async fn discover_playlist_list_requires_category() {
     let client = MusicClient::new();
     let err =
         client.discover().playlist_list().send().await.expect_err("missing category should fail");
+    assert!(matches!(err, MusicClientError::MissingCategory));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn discover_playlist_list_rejects_empty_category() {
+    let client = MusicClient::new();
+    let err = client
+        .discover()
+        .playlist_list()
+        .category(" ")
+        .send()
+        .await
+        .expect_err("empty category should fail");
     assert!(matches!(err, MusicClientError::MissingCategory));
 }
 
@@ -168,6 +230,28 @@ async fn auth_refresh_rejects_platform_token_mismatch() {
 }
 
 #[tokio::test(flavor = "current_thread")]
+async fn auth_refresh_rejects_platform_token_mismatch_reverse() {
+    let client = MusicClient::new();
+    let netease_token = mock_netease_token();
+    let err = client
+        .login()
+        .refresh()
+        .platform(Platform::Tencent)
+        .token(&netease_token)
+        .send()
+        .await
+        .expect_err("netease token on tencent platform should fail");
+
+    assert!(matches!(
+        err,
+        MusicClientError::AuthTokenPlatformMismatch {
+            expected_platform: "tencent",
+            token_platform: "netease",
+        }
+    ));
+}
+
+#[tokio::test(flavor = "current_thread")]
 async fn playlist_detail_requires_id() {
     let client = MusicClient::new();
     let err = client.playlist().detail().send().await.expect_err("missing id should fail");
@@ -179,6 +263,28 @@ async fn playlist_list_requires_category() {
     let client = MusicClient::new();
     let err = client.playlist().list().send().await.expect_err("missing category should fail");
     assert!(matches!(err, MusicClientError::MissingCategory));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn playlist_list_rejects_empty_category() {
+    let client = MusicClient::new();
+    let err =
+        client.playlist().list().category("").send().await.expect_err("empty category should fail");
+    assert!(matches!(err, MusicClientError::MissingCategory));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn playback_lyric_rejects_empty_id() {
+    let client = MusicClient::new();
+    let err = client.playback().lyric().id("").send().await.expect_err("empty id should fail");
+    assert!(matches!(err, MusicClientError::MissingId));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn playback_url_rejects_empty_id() {
+    let client = MusicClient::new();
+    let err = client.playback().url().id(" ").send().await.expect_err("empty id should fail");
+    assert!(matches!(err, MusicClientError::MissingId));
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -382,8 +488,8 @@ async fn manual_qq_login_via_console_qr() {
             LoginStatus::WaitingScan => println!("waiting scan..."),
             LoginStatus::WaitingConfirm => println!("waiting confirm..."),
             LoginStatus::QrCodeExpired => panic!("qrcode expired"),
-            LoginStatus::Success(LoginToken::Tencent(token)) => {
-                println!("qq login success: {:?}", token);
+            LoginStatus::Success(LoginToken::Tencent(_)) => {
+                println!("qq login success: token received (redacted)");
                 break;
             }
             LoginStatus::Success(LoginToken::Netease(_)) => panic!("unexpected netease token"),

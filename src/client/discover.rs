@@ -18,9 +18,9 @@
 
 use std::marker::PhantomData;
 
-use super::utils::{netease_token, tencent_token, validate_auth_platform};
+use super::utils::{netease_token, require_category, tencent_token, validate_auth_platform};
 use super::{LoginTokenRef, MusicClient};
-use crate::error::{MusicClientError, MusicClientResult};
+use crate::error::MusicClientResult;
 use crate::models::{
     HotkeyResult, Platform, PlaylistCategoriesResult, PlaylistListResult, RecommendPlaylistResult,
     ToplistListResult,
@@ -229,7 +229,7 @@ impl<'a> DiscoverRequest<'a, DiscoverPlaylistCategoriesKind> {
 }
 
 impl<'a> DiscoverRequest<'a, DiscoverPlaylistListKind> {
-    /// 设置歌单分类（必填）。
+    /// 设置歌单分类（必填且不能为空字符串）。
     pub fn category(mut self, category: impl Into<String>) -> Self {
         self.category = Some(category.into());
         self
@@ -251,17 +251,18 @@ impl<'a> DiscoverRequest<'a, DiscoverPlaylistListKind> {
     ///
     /// # 前置条件
     ///
-    /// - 需要先通过 [`Self::category`] 设置分类名称或分类 ID（字符串形式）。
+    /// - 需要先通过 [`Self::category`] 设置非空分类名称或分类
+    ///   ID（字符串形式，去除首尾空白后不能为空）。
     /// - 若调用过 [`DiscoverRequest::login`]，其 token 所属平台必须与 [`DiscoverRequest::platform`]
     ///   一致。
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingCategory`] - 未设置 `category`
+    /// - [`MusicClientError::MissingCategory`] - 未设置 `category` 或 `category` 为空字符串
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<PlaylistListResult> {
-        let category = self.category.as_deref().ok_or(MusicClientError::MissingCategory)?;
+        let category = require_category(self.category.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => {

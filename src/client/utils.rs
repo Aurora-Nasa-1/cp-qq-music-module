@@ -69,3 +69,24 @@ pub(crate) fn validate_auth_platform(
         _ => Ok(()),
     }
 }
+
+pub(crate) fn require_keyword(keyword: Option<&str>) -> MusicClientResult<&str> {
+    match keyword {
+        Some(keyword) if !keyword.trim().is_empty() => Ok(keyword),
+        _ => Err(MusicClientError::MissingKeyword),
+    }
+}
+
+pub(crate) fn require_id(id: Option<&str>) -> MusicClientResult<&str> {
+    match id {
+        Some(id) if !id.trim().is_empty() => Ok(id),
+        _ => Err(MusicClientError::MissingId),
+    }
+}
+
+pub(crate) fn require_category(category: Option<&str>) -> MusicClientResult<&str> {
+    match category {
+        Some(category) if !category.trim().is_empty() => Ok(category),
+        _ => Err(MusicClientError::MissingCategory),
+    }
+}

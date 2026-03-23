@@ -18,7 +18,7 @@
 
 use std::marker::PhantomData;
 
-use super::utils::{netease_token, tencent_token, validate_auth_platform};
+use super::utils::{netease_token, require_id, tencent_token, validate_auth_platform};
 use super::{LoginTokenRef, MusicClient};
 use crate::error::{MusicClientError, MusicClientResult};
 use crate::models::{AlbumDetailResult, ArtistDetailResult, Platform, PlaylistDetailResult};
@@ -128,7 +128,7 @@ impl<'a> DetailRequest<'a, DetailKind> {
 }
 
 impl<'a> DetailRequest<'a, DetailArtistKind> {
-    /// 设置歌手 ID（字符串，必填）。
+    /// 设置歌手 ID（字符串，必填且不能为空字符串）。
     pub fn id(mut self, id: impl Into<String>) -> Self {
         self.id = Some(id.into());
         self
@@ -156,11 +156,11 @@ impl<'a> DetailRequest<'a, DetailArtistKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingId`] - 未设置歌手 `id`
+    /// - [`MusicClientError::MissingId`] - 未设置歌手 `id` 或 `id` 为空字符串
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<ArtistDetailResult> {
-        let id = self.id.as_deref().ok_or(MusicClientError::MissingId)?;
+        let id = require_id(self.id.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => {
@@ -180,7 +180,7 @@ impl<'a> DetailRequest<'a, DetailArtistKind> {
 }
 
 impl<'a> DetailRequest<'a, DetailAlbumKind> {
-    /// 设置专辑 ID（字符串，必填）。
+    /// 设置专辑 ID（字符串，必填且不能为空字符串）。
     pub fn id(mut self, id: impl Into<String>) -> Self {
         self.id = Some(id.into());
         self
@@ -196,11 +196,11 @@ impl<'a> DetailRequest<'a, DetailAlbumKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingId`] - 未设置专辑 `id`
+    /// - [`MusicClientError::MissingId`] - 未设置专辑 `id` 或 `id` 为空字符串
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<AlbumDetailResult> {
-        let id = self.id.as_deref().ok_or(MusicClientError::MissingId)?;
+        let id = require_id(self.id.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => {
