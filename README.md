@@ -317,6 +317,15 @@ src/
 
 本项目基于 [MIT License](./LICENSE) 许可证发布。
 
+## Acknowledgements
+
+本项目在接口理解与实现过程中参考了以下开源项目：
+
+- [L-1124/QQMusicApi](https://github.com/L-1124/QQMusicApi)
+- [Binaryify/NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)
+
+感谢原作者与贡献者的开源工作。若本项目中存在需要补充的归属说明，请通过 issue 联系我。
+
 ## 免责声明
 
 因使用（或无法使用）本项目导致的任何直接或间接损失、数据问题、账号风险、服务封禁或法律责任，均由使用者自行承担。
