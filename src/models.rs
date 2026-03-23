@@ -9,8 +9,8 @@
 //!
 //! - 平台标识：[`Platform`][`crate::models::Platform`]
 //! - 搜索/详情/歌单相关结构体：`Search*Result`、`*DetailResult`、`Playlist*`
-//! - 登录相关结构体：[`LoginQrResult`][`crate::models::LoginQrResult`]、
-//!   [`LoginStatus`][`crate::models::LoginStatus`]、 [`LoginToken`][`crate::models::LoginToken`]
+//! - 登录相关结构体：[`LoginStatus`][`crate::models::LoginStatus`]、
+//!   [`LoginToken`][`crate::models::LoginToken`]
 //! - 播放相关结构体：[`LyricResult`][`crate::models::LyricResult`]、
 //!   [`UrlResult`][`crate::models::UrlResult`]、 [`SongQuality`][`crate::models::SongQuality`]
 //!
@@ -302,13 +302,13 @@ pub struct PlaylistListResult {
     pub more: bool,
 }
 
-/// 登录二维码结果。
+/// 登录二维码结果（crate 内部使用）。
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct LoginQrResult {
+pub(crate) struct LoginQrResult {
     /// 二维码图像内容（通常为 `data:image/png;base64,...`，可直接渲染）。
-    pub qr_code: String,
+    pub(crate) qr_code: String,
     /// 二维码 key，用于后续轮询状态。
-    pub qr_key: String,
+    pub(crate) qr_key: String,
 }
 
 /// 播放音质等级。

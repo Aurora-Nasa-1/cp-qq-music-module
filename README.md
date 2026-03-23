@@ -202,7 +202,6 @@ async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::error::MusicC
         .await?;
 
     // qr_code 为 data:image/png;base64,...，可渲染后扫码
-    println!("qr_key: {}", session.qr_key());
     println!("qr_code: {}", session.qr_code());
 
     loop {
