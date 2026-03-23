@@ -23,11 +23,11 @@
 
 ## 安装
 
-### 1) 本地路径依赖
+### 1) crates.io
 
 ```toml
 [dependencies]
-music-bridge-rs = { path = "/path/to/music-bridge-rs" }
+music-bridge-rs = "0.1.0"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 ```
 

@@ -2,40 +2,48 @@
 name = "music-bridge-rs"
 version = "0.1.0"
 edition = "2024"
-license = "MIT"
+rust-version = "1.85"
+description = "Unified async client for Netease Cloud Music and QQ Music"
+documentation = "https://docs.rs/music-bridge-rs"
 readme = "README.md"
+homepage = "https://github.com/AstronW/music-bridge-rs"
+repository = "https://github.com/AstronW/music-bridge-rs"
+license = "MIT"
+keywords = ["api", "async", "client", "music", "netease", "tencent"]
+categories = ["api-bindings", "asynchronous"]
+exclude = [".idea/*", "AGENTS.md", "Cargo.lock", "target/*"]
 
 [dependencies]
-ecb = { version = "0.1", features = ["alloc"] }
-base64 = "0.22"
-thiserror = { version = "2" }
-bytes = "1"
-reqwest = { version = "0.13", features = [
-    "json",
-    "query",
-    "form",
-    "zstd",
-    "gzip",
-    "brotli"
-] }
-serde_json = "1.0"
 aes = "0.8"
-md5 = "0.8"
-hex = "0.4"
-sha1 = "0.10"
-rand = "0.10"
-serde = { version = "1.0", features = ["derive"] }
-qrcode = "0.14.1"
-cookie = "0.18.1"
-time = "0.3.47"
-tokio = { version = "1", features = ["time"] }
-futures-util = "0.3"
 async-tungstenite = { version = "0.29", default-features = false, features = [
-    "tokio-runtime",
-    "tokio-rustls-native-certs",
+  "tokio-runtime",
+  "tokio-rustls-native-certs",
+] }
+base64 = "0.22"
+bytes = "1"
+cookie = "0.18.1"
+ecb = { version = "0.1", features = ["alloc"] }
+futures-util = "0.3"
+hex = "0.4"
+image = { version = "0.25", default-features = false, features = ["png"] }
+md5 = "0.8"
+qrcode = "0.14.1"
+rand = "0.10"
+reqwest = { version = "0.13", features = [
+  "brotli",
+  "form",
+  "gzip",
+  "json",
+  "query",
+  "zstd"
 ] }
 rumqttc = "0.25.1"
-image = { version = "0.25", default-features = false, features = ["png"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha1 = "0.10"
+thiserror = { version = "2" }
+time = "0.3.47"
+tokio = { version = "1", features = ["time"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt", "time"] }
