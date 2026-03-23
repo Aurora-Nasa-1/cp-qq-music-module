@@ -11,7 +11,7 @@
 //! # async fn run() -> Result<(), music_bridge_rs::MusicClientError> {
 //! let client = music_bridge_rs::MusicClient::new();
 //! let session = client.login().session().send().await?;
-//! println!("qr key: {}", session.qr_key());
+//! println!("qr code: {}", session.qr_code());
 //! # Ok(())
 //! # }
 //! ```
@@ -177,7 +177,7 @@ impl<'a> LoginRequest<'a, LoginSessionKind> {
     /// let client = music_bridge_rs::MusicClient::new();
     /// let session =
     ///     client.login().session().platform(music_bridge_rs::models::Platform::Tencent).send().await?;
-    /// assert!(!session.qr_key().is_empty());
+    /// assert!(!session.qr_code().is_empty());
     /// # Ok(())
     /// # }
     /// ```
