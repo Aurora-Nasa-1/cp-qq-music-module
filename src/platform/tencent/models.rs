@@ -30,6 +30,19 @@ fn tencent_singer_pic_url(singer_pmid: &str) -> String {
     format!("https://y.gtimg.cn/music/photo_new/T001R300x300M000{singer_pmid}.jpg")
 }
 
+fn tencent_playback_url(purl: &str) -> String {
+    let purl = purl.trim();
+    if purl.is_empty() {
+        return String::new();
+    }
+
+    if purl.starts_with("http://") || purl.starts_with("https://") {
+        return purl.to_string();
+    }
+
+    format!("https://isure.stream.qqmusic.qq.com/{}", purl.trim_start_matches('/'))
+}
+
 fn parse_song_quality(filename: &str) -> SongQuality {
     // 前缀由高到低匹配，与 get_url 里请求的候选文件名约定保持一致。
     if filename.starts_with("AI00") {
@@ -472,7 +485,7 @@ impl From<TUrlResponse> for UrlResult {
             return Self {
                 id: item.songmid.clone(),
                 level: parse_song_quality(item.filename.as_str()),
-                url: item.purl.clone().unwrap_or_default(),
+                url: item.purl.as_deref().map(tencent_playback_url).unwrap_or_default(),
             };
         }
 
@@ -482,7 +495,7 @@ impl From<TUrlResponse> for UrlResult {
             return Self {
                 id: item.songmid,
                 level: parse_song_quality(item.filename.as_str()),
-                url: item.purl.unwrap_or_default(),
+                url: item.purl.as_deref().map(tencent_playback_url).unwrap_or_default(),
             };
         }
 
@@ -490,7 +503,7 @@ impl From<TUrlResponse> for UrlResult {
             Some(item) => Self {
                 id: item.songmid,
                 level: parse_song_quality(item.filename.as_str()),
-                url: item.purl.unwrap_or_default(),
+                url: item.purl.as_deref().map(tencent_playback_url).unwrap_or_default(),
             },
             None => Self { id: "0".to_string(), level: SongQuality::Standard, url: String::new() },
         }
