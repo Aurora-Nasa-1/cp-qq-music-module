@@ -344,8 +344,8 @@ impl TencentClient {
         level: SongQuality,
         auth: Option<&TencentLoginToken>,
     ) -> MusicClientResult<UrlResult> {
-        // 按音质从高到低排列候选文件名，服务端会返回首个可用资源。
-        let filename = match level {
+        // 按音质从高到低排列候选文件名，并在末尾追加 RS02 普通音质兜底。
+        let mut filename = match level {
             SongQuality::Master => vec![
                 format!("AI00{id}{id}.flac"),
                 format!("Q000{id}{id}.flac"),
@@ -378,8 +378,12 @@ impl TencentClient {
             SongQuality::Exhigh => vec![format!("M800{id}{id}.mp3"), format!("M500{id}{id}.mp3")],
             SongQuality::Standard => vec![format!("M500{id}{id}.mp3")],
         };
+        filename.push(format!("RS02{id}.mp3"));
         let songmid = vec![id; filename.len()];
-        let songtype = vec![0_u8; filename.len()];
+        let mut songtype = vec![0_u8; filename.len()];
+        if let Some(last) = songtype.last_mut() {
+            *last = 1;
+        }
         let response = self
             .post::<TUrlResponse>(
                 json!({
