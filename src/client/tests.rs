@@ -1,501 +1,613 @@
 use super::*;
 use crate::error::MusicClientError;
-use crate::models::{
-    LoginStatus, LoginToken, NeteaseLoginToken, Platform, SongQuality, TencentLoginToken,
-};
+use crate::models::{Platform, SongQuality};
 
-const JIANG_NAN_SONG_ID: &str = "108914";
-const JJ_ARTIST_ID: &str = "3684";
-const SECOND_HEAVEN_ALBUM_ID: &str = "10804";
-const CLASSIC_OLD_SONGS_PLAYLIST_ID: u64 = 8903867087;
-const CLASSIC_OLD_SONGS_PLAYLIST_NAME: &str = "经典老歌500首大全｜回忆青春岁月";
+mod section_validation {
+    use super::*;
 
-fn mock_tencent_token() -> TencentLoginToken {
-    TencentLoginToken {
-        music_id: 1234,
-        music_key: "music_key".to_owned(),
-        refresh_token: "refresh_token".to_owned(),
-        refresh_key: "refresh_key".to_owned(),
-        expires_at: None,
-        login_type: 0,
+    #[tokio::test(flavor = "current_thread")]
+    async fn search_requires_keyword() {
+        let client = MusicClient::new();
+        let err = client.search().send().await.expect_err("missing keyword should fail");
+        assert!(matches!(err, MusicClientError::MissingKeyword));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn search_rejects_empty_keyword() {
+        let client = MusicClient::new();
+        let err =
+            client.search().keyword("   ").send().await.expect_err("empty keyword should fail");
+        assert!(matches!(err, MusicClientError::MissingKeyword));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_requires_id() {
+        let client = MusicClient::new();
+        let err = client.detail().artist().send().await.expect_err("missing id should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_rejects_empty_id() {
+        let client = MusicClient::new();
+        let err =
+            client.detail().artist().id("   ").send().await.expect_err("empty id should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_album_rejects_empty_id() {
+        let client = MusicClient::new();
+        let err = client.detail().album().id("").send().await.expect_err("empty id should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_toplist_requires_id() {
+        let client = MusicClient::new();
+        let err = client.detail().toplist().send().await.expect_err("missing id should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_playlist_list_requires_category() {
+        let client = MusicClient::new();
+        let err = client
+            .discover()
+            .playlist_list()
+            .send()
+            .await
+            .expect_err("missing category should fail");
+        assert!(matches!(err, MusicClientError::MissingCategory));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_playlist_list_rejects_empty_category() {
+        let client = MusicClient::new();
+        let err = client
+            .discover()
+            .playlist_list()
+            .category(" ")
+            .send()
+            .await
+            .expect_err("empty category should fail");
+        assert!(matches!(err, MusicClientError::MissingCategory));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn auth_refresh_requires_token() {
+        let client = MusicClient::new();
+        let err =
+            client.login().refresh().send().await.expect_err("missing refresh token should fail");
+        assert!(matches!(err, MusicClientError::MissingRefreshToken));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn playlist_detail_requires_id() {
+        let client = MusicClient::new();
+        let err = client.playlist().detail().send().await.expect_err("missing id should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn playlist_list_requires_category() {
+        let client = MusicClient::new();
+        let err = client.playlist().list().send().await.expect_err("missing category should fail");
+        assert!(matches!(err, MusicClientError::MissingCategory));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn playlist_list_rejects_empty_category() {
+        let client = MusicClient::new();
+        let err = client
+            .playlist()
+            .list()
+            .category("")
+            .send()
+            .await
+            .expect_err("empty category should fail");
+        assert!(matches!(err, MusicClientError::MissingCategory));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn playback_lyric_rejects_empty_id() {
+        let client = MusicClient::new();
+        let err = client.playback().lyric().id("").send().await.expect_err("empty id should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn playback_url_rejects_empty_id() {
+        let client = MusicClient::new();
+        let err = client.playback().url().id(" ").send().await.expect_err("empty id should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn playlist_list_rejects_invalid_tencent_category() {
+        let client = MusicClient::new();
+        let err = client
+            .playlist()
+            .list()
+            .platform(Platform::Tencent)
+            .category("not-a-number")
+            .send()
+            .await
+            .expect_err("invalid category should fail");
+        assert!(
+            matches!(err, MusicClientError::InvalidCategoryId(category) if category == "not-a-number")
+        );
     }
 }
 
-fn mock_netease_token() -> NeteaseLoginToken {
-    NeteaseLoginToken::new("music_u", "music_r_u", "csrf", None)
-}
+mod section_live_smoke {
+    use super::*;
 
-#[tokio::test(flavor = "current_thread")]
-async fn search_requires_keyword() {
-    let client = MusicClient::new();
-    let err = client.search().send().await.expect_err("missing keyword should fail");
-    assert!(matches!(err, MusicClientError::MissingKeyword));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn search_rejects_empty_keyword() {
-    let client = MusicClient::new();
-    let err = client.search().keyword("   ").send().await.expect_err("empty keyword should fail");
-    assert!(matches!(err, MusicClientError::MissingKeyword));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn search_rejects_platform_token_mismatch() {
-    let client = MusicClient::new();
-    let tencent_token = mock_tencent_token();
-    let err = client
-        .search()
-        .keyword("江南")
-        .platform(Platform::Netease)
-        .login(&tencent_token)
-        .send()
-        .await
-        .expect_err("tencent token on netease platform should fail");
-
-    assert!(matches!(
-        err,
-        MusicClientError::AuthTokenPlatformMismatch {
-            expected_platform: "netease",
-            token_platform: "tencent",
-        }
-    ));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn search_rejects_platform_token_mismatch_reverse() {
-    let client = MusicClient::new();
-    let netease_token = mock_netease_token();
-    let err = client
-        .search()
-        .keyword("江南")
-        .platform(Platform::Tencent)
-        .login(&netease_token)
-        .send()
-        .await
-        .expect_err("netease token on tencent platform should fail");
-
-    assert!(matches!(
-        err,
-        MusicClientError::AuthTokenPlatformMismatch {
-            expected_platform: "tencent",
-            token_platform: "netease",
-        }
-    ));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn detail_rejects_platform_token_mismatch() {
-    let client = MusicClient::new();
-    let tencent_token = mock_tencent_token();
-    let err = client
-        .detail()
-        .artist()
-        .id("1")
-        .platform(Platform::Netease)
-        .login(&tencent_token)
-        .send()
-        .await
-        .expect_err("tencent token on netease platform should fail");
-
-    assert!(matches!(
-        err,
-        MusicClientError::AuthTokenPlatformMismatch {
-            expected_platform: "netease",
-            token_platform: "tencent",
-        }
-    ));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn discover_rejects_platform_token_mismatch() {
-    let client = MusicClient::new();
-    let tencent_token = mock_tencent_token();
-    let err = client
-        .discover()
-        .hotkey()
-        .platform(Platform::Netease)
-        .login(&tencent_token)
-        .send()
-        .await
-        .expect_err("tencent token on netease platform should fail");
-
-    assert!(matches!(
-        err,
-        MusicClientError::AuthTokenPlatformMismatch {
-            expected_platform: "netease",
-            token_platform: "tencent",
-        }
-    ));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn playback_rejects_platform_token_mismatch() {
-    let client = MusicClient::new();
-    let tencent_token = mock_tencent_token();
-    let err = client
-        .playback()
-        .lyric()
-        .id("1")
-        .platform(Platform::Netease)
-        .login(&tencent_token)
-        .send()
-        .await
-        .expect_err("tencent token on netease platform should fail");
-
-    assert!(matches!(
-        err,
-        MusicClientError::AuthTokenPlatformMismatch {
-            expected_platform: "netease",
-            token_platform: "tencent",
-        }
-    ));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn detail_requires_id() {
-    let client = MusicClient::new();
-    let err = client.detail().artist().send().await.expect_err("missing id should fail");
-    assert!(matches!(err, MusicClientError::MissingId));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn detail_rejects_empty_id() {
-    let client = MusicClient::new();
-    let err = client.detail().artist().id("   ").send().await.expect_err("empty id should fail");
-    assert!(matches!(err, MusicClientError::MissingId));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn detail_album_rejects_empty_id() {
-    let client = MusicClient::new();
-    let err = client.detail().album().id("").send().await.expect_err("empty id should fail");
-    assert!(matches!(err, MusicClientError::MissingId));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn detail_toplist_requires_id() {
-    let client = MusicClient::new();
-    let err = client.detail().toplist().send().await.expect_err("missing id should fail");
-    assert!(matches!(err, MusicClientError::MissingId));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn discover_playlist_list_requires_category() {
-    let client = MusicClient::new();
-    let err =
-        client.discover().playlist_list().send().await.expect_err("missing category should fail");
-    assert!(matches!(err, MusicClientError::MissingCategory));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn discover_playlist_list_rejects_empty_category() {
-    let client = MusicClient::new();
-    let err = client
-        .discover()
-        .playlist_list()
-        .category(" ")
-        .send()
-        .await
-        .expect_err("empty category should fail");
-    assert!(matches!(err, MusicClientError::MissingCategory));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn auth_refresh_requires_token() {
-    let client = MusicClient::new();
-    let err = client.login().refresh().send().await.expect_err("missing refresh token should fail");
-    assert!(matches!(err, MusicClientError::MissingRefreshToken));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn auth_refresh_rejects_platform_token_mismatch() {
-    let client = MusicClient::new();
-    let tencent_token = mock_tencent_token();
-    let err = client
-        .login()
-        .refresh()
-        .platform(Platform::Netease)
-        .token(&tencent_token)
-        .send()
-        .await
-        .expect_err("tencent token on netease platform should fail");
-
-    assert!(matches!(
-        err,
-        MusicClientError::AuthTokenPlatformMismatch {
-            expected_platform: "netease",
-            token_platform: "tencent",
-        }
-    ));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn auth_refresh_rejects_platform_token_mismatch_reverse() {
-    let client = MusicClient::new();
-    let netease_token = mock_netease_token();
-    let err = client
-        .login()
-        .refresh()
-        .platform(Platform::Tencent)
-        .token(&netease_token)
-        .send()
-        .await
-        .expect_err("netease token on tencent platform should fail");
-
-    assert!(matches!(
-        err,
-        MusicClientError::AuthTokenPlatformMismatch {
-            expected_platform: "tencent",
-            token_platform: "netease",
-        }
-    ));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn playlist_detail_requires_id() {
-    let client = MusicClient::new();
-    let err = client.playlist().detail().send().await.expect_err("missing id should fail");
-    assert!(matches!(err, MusicClientError::MissingId));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn playlist_list_requires_category() {
-    let client = MusicClient::new();
-    let err = client.playlist().list().send().await.expect_err("missing category should fail");
-    assert!(matches!(err, MusicClientError::MissingCategory));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn playlist_list_rejects_empty_category() {
-    let client = MusicClient::new();
-    let err =
-        client.playlist().list().category("").send().await.expect_err("empty category should fail");
-    assert!(matches!(err, MusicClientError::MissingCategory));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn playback_lyric_rejects_empty_id() {
-    let client = MusicClient::new();
-    let err = client.playback().lyric().id("").send().await.expect_err("empty id should fail");
-    assert!(matches!(err, MusicClientError::MissingId));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn playback_url_rejects_empty_id() {
-    let client = MusicClient::new();
-    let err = client.playback().url().id(" ").send().await.expect_err("empty id should fail");
-    assert!(matches!(err, MusicClientError::MissingId));
-}
-
-#[tokio::test(flavor = "current_thread")]
-async fn playlist_list_rejects_invalid_tencent_category() {
-    let client = MusicClient::new();
-    let err = client
-        .playlist()
-        .list()
-        .platform(Platform::Tencent)
-        .category("not-a-number")
-        .send()
-        .await
-        .expect_err("invalid category should fail");
-    assert!(
-        matches!(err, MusicClientError::InvalidCategoryId(category) if category == "not-a-number")
-    );
-}
-
-#[tokio::test(flavor = "current_thread")]
-#[ignore = "requires live Netease API and may change over time"]
-async fn live_search_should_match_expected_ids() {
-    let client = MusicClient::new();
-
-    let songs = client
-        .search()
-        .song()
-        .keyword("江南")
-        .limit(10)
-        .send()
-        .await
-        .expect("search song should succeed");
-    assert!(!songs.songs.is_empty(), "song result should not be empty");
-    assert_eq!(songs.songs[0].id, JIANG_NAN_SONG_ID);
-
-    let artists = client
-        .search()
-        .artist()
-        .keyword("林俊杰")
-        .limit(10)
-        .send()
-        .await
-        .expect("search artist should succeed");
-    assert!(!artists.artists.is_empty(), "artist result should not be empty");
-    assert_eq!(artists.artists[0].id, JJ_ARTIST_ID);
-
-    let albums = client
-        .search()
-        .album()
-        .keyword("第二天堂")
-        .limit(10)
-        .send()
-        .await
-        .expect("search album should succeed");
-    assert!(!albums.albums.is_empty(), "album result should not be empty");
-    assert_eq!(albums.albums[0].id, SECOND_HEAVEN_ALBUM_ID);
-
-    let playlists = client
-        .search()
-        .playlist()
-        .keyword("林俊杰")
-        .limit(10)
-        .send()
-        .await
-        .expect("search playlist should succeed");
-    assert!(!playlists.playlists.is_empty(), "playlist result should not be empty");
-}
-
-#[tokio::test(flavor = "current_thread")]
-#[ignore = "requires live Netease API and may change over time"]
-async fn live_playback_should_have_lyric_and_url() {
-    let client = MusicClient::new();
-
-    let lyric = client
-        .playback()
-        .lyric()
-        .id(JIANG_NAN_SONG_ID)
-        .send()
-        .await
-        .expect("lyric request should succeed");
-    assert!(!lyric.lyric.trim().is_empty(), "lyric should not be empty");
-
-    let url = client
-        .playback()
-        .url()
-        .id(JIANG_NAN_SONG_ID)
-        .level(SongQuality::Surround)
-        .send()
-        .await
-        .expect("url request should succeed");
-    assert!(!url.url.trim().is_empty(), "playback url should not be empty");
-}
-
-#[tokio::test(flavor = "current_thread")]
-#[ignore = "requires live Netease API and may change over time"]
-async fn live_discover_and_detail_should_match_expected_values() {
-    let client = MusicClient::new();
-    let limit = 5;
-
-    let playlist_list = client
-        .discover()
-        .playlist_list()
-        .category("流行")
-        .limit(limit)
-        .send()
-        .await
-        .expect("playlist list should succeed");
-    assert_eq!(playlist_list.playlists.len() as u64, limit);
-
-    let detail = client
-        .detail()
-        .playlist()
-        .id(CLASSIC_OLD_SONGS_PLAYLIST_ID)
-        .send()
-        .await
-        .expect("playlist detail should succeed");
-    assert_eq!(detail.name, CLASSIC_OLD_SONGS_PLAYLIST_NAME);
-}
-
-fn print_qr_for_scan(raw: &str) {
-    use std::io::Write as _;
-
-    use image::GenericImageView;
-
-    const TARGET_COLS: u32 = 32;
-    const QUIET_ZONE_MODULES: u32 = 4;
-    const PREFIX: &str = "data:image/png;base64,";
-    let base64_data = if let Some(data) = raw.strip_prefix(PREFIX) {
-        data
-    } else {
-        println!("{raw}");
-        return;
-    };
-
-    let bytes = {
-        use base64::Engine as _;
-        base64::engine::general_purpose::STANDARD
-            .decode(base64_data.as_bytes())
-            .expect("qrcode base64 should be valid")
-    };
-
-    let image = image::load_from_memory_with_format(&bytes, image::ImageFormat::Png)
-        .expect("qrcode should be a valid png");
-    let (width, height) = image.dimensions();
-    let scale = width.div_ceil(TARGET_COLS).max(2);
-    let scaled_width = width / scale;
-    let scaled_height = height / scale;
-    let quiet_cols = (QUIET_ZONE_MODULES * 2) as usize;
-    let quiet_row = " ".repeat((scaled_width as usize) * 2 + quiet_cols * 2);
-
-    println!();
-    for _ in 0..QUIET_ZONE_MODULES {
-        println!("{quiet_row}");
+    #[tokio::test(flavor = "current_thread")]
+    async fn search_returns_correct_response_netease() {
+        let client = MusicClient::new();
+        let response = client
+            .search()
+            .keyword("江南")
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("search should succeed");
+        assert_eq!(response.songs[0].id, "108914");
+        assert_eq!(response.songs[0].album.id, "10804");
+        assert_eq!(response.songs[0].album.name, "第二天堂");
+        assert_eq!(response.songs[0].artists[0].name, "林俊杰");
     }
-    for y in 0..scaled_height {
-        print!("{}", " ".repeat(quiet_cols));
-        for x in 0..scaled_width {
-            let px = image.get_pixel(x * scale, y * scale);
-            let brightness = (u32::from(px[0]) + u32::from(px[1]) + u32::from(px[2])) / 3;
-            if brightness > 128 {
-                print!("  ");
-            } else {
-                print!("██");
-            }
-        }
-        print!("{}", " ".repeat(quiet_cols));
-        println!();
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn search_returns_correct_response_tencent() {
+        let client = MusicClient::new();
+        let response = client
+            .search()
+            .keyword("江南")
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("search should succeed");
+        assert_eq!(response.songs[0].id, "004TXEXY2G2c7C");
+        assert_eq!(response.songs[0].album.id, "000y5gq7449K9I");
+        assert_eq!(response.songs[0].album.name, "第二天堂");
+        assert_eq!(response.songs[0].artists[0].name, "林俊杰");
     }
-    for _ in 0..QUIET_ZONE_MODULES {
-        println!("{quiet_row}");
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn search_artist_returns_correct_response_netease() {
+        let client = MusicClient::new();
+        let response = client
+            .search()
+            .artist()
+            .keyword("林俊杰")
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("search should succeed");
+        assert_eq!(response.artists[0].id, "3684");
+        assert_eq!(response.artists[0].name, "林俊杰");
+        assert!(!response.artists[0].pic_url.is_empty());
     }
-    println!();
-    let _ = std::io::stdout().flush();
-}
 
-#[tokio::test(flavor = "current_thread")]
-#[ignore = "manual qq login requires terminal qr scan"]
-async fn manual_qq_login_via_console_qr() {
-    let client = MusicClient::new();
-    let session = client
-        .login()
-        .session()
-        .platform(Platform::Tencent)
-        .send()
-        .await
-        .expect("should fetch qq qrcode");
+    #[tokio::test(flavor = "current_thread")]
+    async fn search_artist_returns_correct_response_tencent() {
+        let client = MusicClient::new();
+        let response = client
+            .search()
+            .artist()
+            .keyword("林俊杰")
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("search should succeed");
+        assert_eq!(response.artists[0].id, "001BLpXF2DyJe2");
+        assert_eq!(response.artists[0].name, "林俊杰");
+        assert!(!response.artists[0].pic_url.is_empty());
+    }
 
-    print_qr_for_scan(session.qr_code());
+    #[tokio::test(flavor = "current_thread")]
+    async fn search_album_returns_correct_response_netease() {
+        let client = MusicClient::new();
+        let response = client
+            .search()
+            .album()
+            .keyword("江南")
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("search should succeed");
+        assert_eq!(response.albums[0].id, "10804");
+        assert_eq!(response.albums[0].name, "第二天堂");
+        assert!(!response.albums[0].pic_url.is_empty());
+    }
 
-    let deadline = tokio::time::Instant::now() + tokio::time::Duration::from_secs(180);
-    loop {
-        let status = match session.status().await {
-            Ok(status) => status,
-            Err(MusicClientError::TencentMqttLogin(err)) => {
-                println!("transient mqtt status error: {err}");
-                LoginStatus::WaitingScan
-            }
-            Err(err) => panic!("qq login status should return: {err:?}"),
-        };
+    #[tokio::test(flavor = "current_thread")]
+    async fn search_album_returns_correct_response_tencent() {
+        let client = MusicClient::new();
+        let response = client
+            .search()
+            .album()
+            .keyword("江南")
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("search should succeed");
+        assert_eq!(response.albums[0].id, "000y5gq7449K9I");
+        assert_eq!(response.albums[0].name, "第二天堂");
+        assert!(!response.albums[0].pic_url.is_empty());
+    }
 
-        match status {
-            LoginStatus::WaitingScan => println!("waiting scan..."),
-            LoginStatus::WaitingConfirm => println!("waiting confirm..."),
-            LoginStatus::QrCodeExpired => panic!("qrcode expired"),
-            LoginStatus::Success(LoginToken::Tencent(_)) => {
-                println!("qq login success: token received (redacted)");
-                break;
-            }
-            LoginStatus::Success(LoginToken::Netease(_)) => panic!("unexpected netease token"),
-        }
+    #[tokio::test(flavor = "current_thread")]
+    async fn search_playlist_returns_correct_response_netease() {
+        let client = MusicClient::new();
+        let response = client
+            .search()
+            .playlist()
+            .keyword("江南")
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("search should succeed");
+        assert_eq!(response.playlists[0].id, "8814710412");
+        assert_eq!(response.playlists[0].name, "烟雨江南 | 你一句春不晚 我到了真江南");
+        assert!(!response.playlists[0].pic_url.is_empty());
+    }
 
-        assert!(tokio::time::Instant::now() < deadline, "manual qq login timed out");
-        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+    #[tokio::test(flavor = "current_thread")]
+    async fn search_playlist_returns_correct_response_tencent() {
+        let client = MusicClient::new();
+        let response = client
+            .search()
+            .playlist()
+            .keyword("江南")
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("search should succeed");
+        assert_eq!(response.playlists[0].id, "1790504159");
+        assert_eq!(response.playlists[0].name, "青春记忆 | 90后校园岁月的流行歌曲");
+        assert!(response.playlists[0].pic_url.starts_with("http://qpic.y.qq.com/music_cover/"));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_returns_correct_response_artist_netease() {
+        let client = MusicClient::new();
+        let response = client
+            .detail()
+            .artist()
+            .id("3684")
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("detail should succeed");
+        assert_eq!(response.songs[0].id, "108485");
+        assert_eq!(response.songs[0].album.id, "10770");
+        assert_eq!(response.songs[0].album.name, "JJ陆");
+        assert_eq!(response.name, "林俊杰");
+        assert!(response.description.starts_with("JJ林俊杰的创作来自最深的情感"))
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_returns_correct_response_artist_tencent() {
+        let client = MusicClient::new();
+        let response = client
+            .detail()
+            .artist()
+            .id("001BLpXF2DyJe2")
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("detail should succeed");
+        assert_eq!(response.songs[0].id, "001N8e5Q4Gjxda");
+        assert_eq!(response.songs[0].album.id, "002g6zv02X7SNi");
+        assert_eq!(response.songs[0].album.name, "JJ陆");
+        assert_eq!(response.name, "林俊杰");
+        assert!(response.description.starts_with("JJ林俊杰的创作来自最深的情感"))
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_returns_correct_response_album_netease() {
+        let client = MusicClient::new();
+        let response = client
+            .detail()
+            .album()
+            .id("10770")
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("detail should succeed");
+        assert_eq!(response.songs[0].id, "108458");
+        assert_eq!(response.songs[0].name, "SIXOLOGY");
+        assert_eq!(response.name, "JJ陆");
+        assert!(response.description.starts_with("JJ林俊杰 2008最新创作大碟 JJ陆"));
+        assert!(!response.pic_url.is_empty())
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_returns_correct_response_album_tencent() {
+        let client = MusicClient::new();
+        let response = client
+            .detail()
+            .album()
+            .id("002g6zv02X7SNi")
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("detail should succeed");
+        assert_eq!(response.songs[0].id, "002vb5JD04eGw3");
+        assert_eq!(response.songs[0].name, "Sixology");
+        assert_eq!(response.name, "JJ陆");
+        assert!(response.description.starts_with("JJ林俊杰 2008最新创作大碟 JJ陆"));
+        assert!(!response.pic_url.is_empty())
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_returns_correct_response_playlist_netease() {
+        let client = MusicClient::new();
+        let response = client
+            .detail()
+            .playlist()
+            .id(8814710412)
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("detail should succeed");
+        assert_eq!(response.songs[0].id, "1392942840");
+        assert_eq!(response.songs[0].name, "烟雨行舟 (新版)");
+        assert_eq!(response.name, "烟雨江南 | 你一句春不晚 我到了真江南");
+        assert!(response.description.starts_with("恬静而淡雅"));
+        assert!(!response.pic_url.is_empty())
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_returns_correct_response_playlist_tencent() {
+        let client = MusicClient::new();
+        let response = client
+            .detail()
+            .playlist()
+            .id(1790504159)
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("detail should succeed");
+        assert_eq!(response.songs[0].id, "004TXEXY2G2c7C");
+        assert_eq!(response.songs[0].name, "江南");
+        assert_eq!(response.name, "青春记忆 | 90后校园岁月的流行歌曲");
+        assert!(response.description.starts_with("教室里的不再是我们了"));
+        assert!(!response.pic_url.is_empty())
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_returns_correct_response_toplist_netease() {
+        let client = MusicClient::new();
+        let response = client
+            .detail()
+            .toplist()
+            .id(19723756)
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("detail should succeed");
+        assert_eq!(response.name, "飙升榜");
+        assert_eq!(response.description, "云音乐中每天热度上升最快的100首单曲，每日更新。");
+        assert!(!response.pic_url.is_empty())
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_returns_correct_response_toplist_tencent() {
+        let client = MusicClient::new();
+        let response = client
+            .detail()
+            .toplist()
+            .id(62)
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("detail should succeed");
+        assert_eq!(response.name, "飙升榜");
+        assert!(response.description.starts_with("1. 榜单定义：QQ音乐站内播"));
+        assert!(!response.pic_url.is_empty())
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn playback_returns_correct_response_netease_url() {
+        let client = MusicClient::new();
+        let response = client
+            .playback()
+            .url()
+            .id("108914")
+            .level(SongQuality::Master)
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("playback should succeed");
+        assert!(response.url.starts_with("http://m802.music.126.net/"));
+        assert_eq!(response.level, SongQuality::Standard);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn playback_returns_correct_response_tencent_url() {
+        let client = MusicClient::new();
+        let response = client
+            .playback()
+            .url()
+            .id("004Gq0xE1YC8xp")
+            .level(SongQuality::Master)
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("playback should succeed");
+        assert!(response.url.starts_with("https://isure.stream.qqmusic.qq.com/"));
+        assert_eq!(response.level, SongQuality::Standard);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn playback_returns_correct_response_netease_lyric() {
+        let client = MusicClient::new();
+        let response = client
+            .playback()
+            .lyric()
+            .id("108914")
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("playback should succeed");
+        assert!(response.lyric.starts_with("[00:37.010] 风到这里就是粘"));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn playback_returns_correct_response_tencent_lyric() {
+        let client = MusicClient::new();
+        let response = client
+            .playback()
+            .lyric()
+            .id("004Gq0xE1YC8xp")
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("playback should succeed");
+        assert!(response.lyric.starts_with("[00:00.270]素颜 - 许嵩/何曼婷"));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_returns_correct_response_netease_hotkey() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .hotkey()
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert_eq!(response.hotkey.len(), 20);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_returns_correct_response_tencent_hotkey() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .hotkey()
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert_eq!(response.hotkey.len(), 20);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_returns_correct_response_netease_recommend() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .recommend_playlist()
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert_eq!(response.playlists.len(), 6);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_returns_correct_response_tencent_recommend() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .recommend_playlist()
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert_eq!(response.playlists.len(), 6);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_returns_correct_response_netease_toplist() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .toplist_list()
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert_eq!(response.toplists[0].name, "飙升榜");
+        assert_eq!(response.toplists[7].name, "网易云中文说唱榜");
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_returns_correct_response_tencent_toplist() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .toplist_list()
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert_eq!(response.toplists[0].name, "飙升榜");
+        assert_eq!(response.toplists[1].name, "热歌榜");
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_returns_correct_response_netease_categories() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .playlist_categories()
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert_eq!(response.categories[0].name, "全部歌单");
+        assert_eq!(response.categories[1].name, "综艺");
+        assert_eq!(response.categories[0].id, "全部歌单");
+        assert_eq!(response.categories[1].id, "综艺");
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_returns_correct_response_tencent_categories() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .playlist_categories()
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert_eq!(response.categories[0].name, "官方歌单");
+        assert_eq!(response.categories[1].name, "私藏");
+        assert_eq!(response.categories[0].id, "3317");
+        assert_eq!(response.categories[1].id, "3417");
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_returns_correct_response_netease_playlist() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .playlist_list()
+            .category("全部歌单")
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert!(response.more);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn discover_returns_correct_response_tencent_playlist() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .playlist_list()
+            .category("3317")
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert!(response.more);
     }
 }
