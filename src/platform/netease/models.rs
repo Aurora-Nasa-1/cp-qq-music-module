@@ -324,10 +324,12 @@ struct NLyricData {
 
 impl NLyricResponse {
     pub(super) fn into_with(self, id: &str) -> LyricResult {
+        let lyric = super::super::normalize_timestamp_lyric(self.lrc.lyric);
+        let trans_lyric = super::super::normalize_timestamp_lyric(self.tlyric.lyric);
         LyricResult {
             id: id.to_string(),
-            lyric: self.lrc.lyric,
-            trans_lyric: if self.tlyric.lyric.is_empty() { None } else { Some(self.tlyric.lyric) },
+            lyric,
+            trans_lyric: if trans_lyric.is_empty() { None } else { Some(trans_lyric) },
         }
     }
 }

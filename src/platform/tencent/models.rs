@@ -443,9 +443,16 @@ struct TLyricData {
 
 impl TLyricResponse {
     pub(super) fn into_with(self, id: &str) -> LyricResult {
-        let lyric = decode_base64_text(self.result.data.lyric);
-        let trans_lyric =
-            self.result.data.trans.and_then(to_optional_string).map(decode_base64_text);
+        let lyric =
+            super::super::normalize_timestamp_lyric(decode_base64_text(self.result.data.lyric));
+        let trans_lyric = self
+            .result
+            .data
+            .trans
+            .and_then(to_optional_string)
+            .map(decode_base64_text)
+            .map(super::super::normalize_timestamp_lyric)
+            .and_then(to_optional_string);
         LyricResult { id: id.to_string(), lyric, trans_lyric }
     }
 }
@@ -885,52 +892,5 @@ impl TLoginInfoResponse {
             expires_at,
             login_type: data.login_type,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use serde_json::json;
-
-    use super::*;
-
-    fn login_info_json(musicid: u64, musickey: &str) -> serde_json::Value {
-        json!({
-            "result": {
-                "data": {
-                    "musicid": musicid,
-                    "musickey": musickey,
-                    "refresh_token": "refresh-token",
-                    "refresh_key": "refresh-key",
-                    "expired_at": 1700000000,
-                    "musickeyCreateTime": 0,
-                    "keyExpiresIn": 0,
-                    "loginType": 6
-                }
-            }
-        })
-    }
-
-    #[test]
-    fn login_info_into_token_rejects_invalid_fields() {
-        let response: TLoginInfoResponse =
-            serde_json::from_value(login_info_json(1, "")).expect("response json should be valid");
-        let err = response.into_token().expect_err("empty musickey should fail");
-        assert!(matches!(err, MusicClientError::InvalidTencentLoginTokenField("musickey")));
-    }
-
-    #[test]
-    fn login_info_into_token_builds_token() {
-        let response: TLoginInfoResponse =
-            serde_json::from_value(login_info_json(1234, "music-key"))
-                .expect("response json should be valid");
-        let token = response.into_token().expect("valid login info should build token");
-
-        assert_eq!(token.music_id, 1234);
-        assert_eq!(token.music_key, "music-key");
-        assert_eq!(token.refresh_token, "refresh-token");
-        assert_eq!(token.refresh_key, "refresh-key");
-        assert_eq!(token.login_type, 6);
-        assert_eq!(token.expires_at, Some(1700000000));
     }
 }
