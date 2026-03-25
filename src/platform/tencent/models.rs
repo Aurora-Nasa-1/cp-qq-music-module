@@ -540,7 +540,16 @@ struct THotkeyItem {
 
 impl From<THotkeyResponse> for HotkeyResult {
     fn from(value: THotkeyResponse) -> Self {
-        Self { hotkey: value.result.data.vec_hotkey.into_iter().map(|item| item.query).collect() }
+        Self {
+            hotkey: value
+                .result
+                .data
+                .vec_hotkey
+                .into_iter()
+                .take(20)
+                .map(|item| item.query)
+                .collect(),
+        }
     }
 }
 
