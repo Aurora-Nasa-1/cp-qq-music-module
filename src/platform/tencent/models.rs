@@ -600,6 +600,7 @@ impl From<TRecommendSonglistResponse> for RecommendPlaylistResult {
                 .data
                 .v_shelf
                 .into_iter()
+                .take(6)
                 .map(|shelf| {
                     let [niche] = shelf.v_niche;
                     let [card] = niche.v_card;

@@ -321,7 +321,7 @@ impl NeteaseClient {
                 "pageCode": "HOME_RECOMMEND_PAGE",
                 "cursor": 1,
                 "refresh": true,
-                "blockCodeOrderList": ["PAGE_RECOMMEND_SPECIAL_CLOUD_VILLAGE_PLAYLIST"]
+                "blockCodeOrderList": "[\"PAGE_RECOMMEND_SPECIAL_CLOUD_VILLAGE_PLAYLIST\"]"
                 }),
                 token,
             )
