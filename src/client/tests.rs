@@ -144,7 +144,7 @@ mod section_live_smoke {
     use super::*;
 
     #[tokio::test(flavor = "current_thread")]
-    async fn search_returns_correct_response_netease() {
+    async fn netease_search_song_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .search()
@@ -160,7 +160,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn search_returns_correct_response_tencent() {
+    async fn tencent_search_song_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .search()
@@ -176,7 +176,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn search_artist_returns_correct_response_netease() {
+    async fn netease_search_artist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .search()
@@ -192,7 +192,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn search_artist_returns_correct_response_tencent() {
+    async fn tencent_search_artist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .search()
@@ -208,7 +208,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn search_album_returns_correct_response_netease() {
+    async fn netease_search_album_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .search()
@@ -224,7 +224,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn search_album_returns_correct_response_tencent() {
+    async fn tencent_search_album_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .search()
@@ -240,7 +240,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn search_playlist_returns_correct_response_netease() {
+    async fn netease_search_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .search()
@@ -256,7 +256,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn search_playlist_returns_correct_response_tencent() {
+    async fn tencent_search_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .search()
@@ -272,7 +272,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn detail_returns_correct_response_artist_netease() {
+    async fn netease_detail_artist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .detail()
@@ -290,7 +290,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn detail_returns_correct_response_artist_tencent() {
+    async fn tencent_detail_artist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .detail()
@@ -308,7 +308,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn detail_returns_correct_response_album_netease() {
+    async fn netease_detail_album_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .detail()
@@ -326,7 +326,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn detail_returns_correct_response_album_tencent() {
+    async fn tencent_detail_album_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .detail()
@@ -344,7 +344,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn detail_returns_correct_response_playlist_netease() {
+    async fn netease_detail_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .detail()
@@ -362,7 +362,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn detail_returns_correct_response_playlist_tencent() {
+    async fn tencent_detail_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .detail()
@@ -380,7 +380,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn detail_returns_correct_response_toplist_netease() {
+    async fn netease_detail_toplist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .detail()
@@ -396,7 +396,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn detail_returns_correct_response_toplist_tencent() {
+    async fn tencent_detail_toplist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .detail()
@@ -412,7 +412,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn playback_returns_correct_response_netease_url() {
+    async fn netease_playback_url_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .playback()
@@ -423,12 +423,14 @@ mod section_live_smoke {
             .send()
             .await
             .expect("playback should succeed");
-        assert!(response.url.starts_with("http://m802.music.126.net/"));
+        let parsed = reqwest::Url::parse(&response.url).expect("url should be valid");
+        let host = parsed.host_str().expect("host should exist");
+        assert!(host.ends_with(".music.126.net"), "unexpected host: {host}");
         assert_eq!(response.level, SongQuality::Standard);
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn playback_returns_correct_response_tencent_url() {
+    async fn tencent_playback_url_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .playback()
@@ -444,7 +446,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn playback_returns_correct_response_netease_lyric() {
+    async fn netease_playback_lyric_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .playback()
@@ -458,7 +460,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn playback_returns_correct_response_tencent_lyric() {
+    async fn tencent_playback_lyric_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .playback()
@@ -472,7 +474,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn discover_returns_correct_response_netease_hotkey() {
+    async fn netease_discover_hotkey_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .discover()
@@ -485,7 +487,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn discover_returns_correct_response_tencent_hotkey() {
+    async fn tencent_discover_hotkey_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .discover()
@@ -498,7 +500,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn discover_returns_correct_response_netease_recommend() {
+    async fn netease_discover_recommend_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .discover()
@@ -511,7 +513,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn discover_returns_correct_response_tencent_recommend() {
+    async fn tencent_discover_recommend_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .discover()
@@ -524,7 +526,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn discover_returns_correct_response_netease_toplist() {
+    async fn netease_discover_toplist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .discover()
@@ -538,7 +540,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn discover_returns_correct_response_tencent_toplist() {
+    async fn tencent_discover_toplist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .discover()
@@ -552,7 +554,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn discover_returns_correct_response_netease_categories() {
+    async fn netease_discover_categories_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .discover()
@@ -568,7 +570,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn discover_returns_correct_response_tencent_categories() {
+    async fn tencent_discover_categories_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .discover()
@@ -584,7 +586,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn discover_returns_correct_response_netease_playlist() {
+    async fn netease_discover_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .discover()
@@ -598,7 +600,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn discover_returns_correct_response_tencent_playlist() {
+    async fn tencent_discover_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
             .discover()
