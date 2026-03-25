@@ -177,14 +177,16 @@ impl NeteaseClient {
             .post::<NArtistDetailResponse>(
                 "/api/batch",
                 json!({
-                      "/api/v2/artist/songs": {
+                    "/api/v2/artist/songs": json!({
                         "id": id,
                         "limit": limit,
                         "offset": offset
-                      },
-                      "/api/artist/head/info/get": {
+                    })
+                    .to_string(),
+                    "/api/artist/head/info/get": json!({
                         "id": id
-                      }
+                    })
+                    .to_string()
                 }),
                 token,
             )
