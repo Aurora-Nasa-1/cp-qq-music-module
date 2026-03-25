@@ -314,7 +314,7 @@ pub(crate) struct LoginQrResult {
 /// 播放音质等级。
 ///
 /// 该枚举会被序列化为平台可识别的字符串值；不同平台对高阶音质支持程度可能不同。
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum SongQuality {
     /// 超清母带.
