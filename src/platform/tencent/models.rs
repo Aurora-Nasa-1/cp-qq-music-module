@@ -743,17 +743,24 @@ struct TSonglistCategoriesItem {
 
 impl From<TSonglistCategoriesResponse> for PlaylistCategoriesResult {
     fn from(value: TSonglistCategoriesResponse) -> Self {
+        const TENCENT_AI_PLAYLIST_CATEGORY_ID: u64 = 9527;
         let mut group = HashMap::new();
         let mut categories = Vec::new();
 
         for category_group in value.result.data.v_group {
             let category = category_group.group_id;
             group.insert(category, category_group.group_name);
-            categories.extend(category_group.v_item.into_iter().map(|item| PlaylistCategory {
-                id: item.id.to_string(),
-                name: item.name,
-                category,
-            }));
+            categories.extend(
+                category_group
+                    .v_item
+                    .into_iter()
+                    .filter(|item| item.id != TENCENT_AI_PLAYLIST_CATEGORY_ID)
+                    .map(|item| PlaylistCategory {
+                        id: item.id.to_string(),
+                        name: item.name,
+                        category,
+                    }),
+            );
         }
 
         Self { group, categories }
