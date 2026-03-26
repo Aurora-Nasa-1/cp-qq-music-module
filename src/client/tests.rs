@@ -50,6 +50,26 @@ mod section_validation {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    async fn detail_song_requires_id() {
+        let client = MusicClient::new();
+        let err = client.detail().song().send().await.expect_err("missing id should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_song_rejects_empty_ids() {
+        let client = MusicClient::new();
+        let err = client
+            .detail()
+            .song()
+            .ids(vec!["".to_string(), "   ".to_string()])
+            .send()
+            .await
+            .expect_err("empty ids should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
     async fn discover_playlist_list_requires_category() {
         let client = MusicClient::new();
         let err = client
@@ -269,6 +289,57 @@ mod section_live_smoke {
         assert_eq!(response.playlists[0].id, "1790504159");
         assert_eq!(response.playlists[0].name, "青春记忆 | 90后校园岁月的流行歌曲");
         assert!(response.playlists[0].pic_url.starts_with("http://qpic.y.qq.com/music_cover/"));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn netease_detail_songs_returns_correct_response() {
+        let client = MusicClient::new();
+        let response = client
+            .detail()
+            .song()
+            .id("1392942840")
+            .ids(vec!["1859245776", "1862710424"])
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("detail should succeed");
+        assert_eq!(response.songs[0].id, "1392942840");
+        assert_eq!(response.songs[0].album.id, "81878288");
+        assert_eq!(response.songs[0].album.name, "烟雨行舟");
+        assert_eq!(response.songs[0].artists[0].id, "28863695");
+        assert_eq!(response.songs[1].id, "1859245776");
+        assert_eq!(response.songs[1].album.id, "130016223");
+        assert_eq!(response.songs[1].album.name, "STAY");
+        assert_eq!(response.songs[1].artists[0].id, "32795025");
+        assert_eq!(response.songs[2].id, "1862710424");
+        assert_eq!(response.songs[2].album.id, "130631571");
+        assert_eq!(response.songs[2].artists[0].id, "32795025");
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn tencent_detail_songs_returns_correct_response() {
+        let client = MusicClient::new();
+        let response = client
+            .detail()
+            .song()
+            .id("001N8e5Q4Gjxda")
+            .ids(vec!["004Gq0xE1YC8xp", "00264YJC1bmylC"])
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("detail should succeed");
+        assert_eq!(response.songs[0].id, "001N8e5Q4Gjxda");
+        assert_eq!(response.songs[0].album.id, "002g6zv02X7SNi");
+        assert_eq!(response.songs[0].album.name, "JJ陆");
+        assert_eq!(response.songs[0].artists[0].id, "001BLpXF2DyJe2");
+        assert_eq!(response.songs[1].id, "004Gq0xE1YC8xp");
+        assert_eq!(response.songs[1].album.id, "0035f8nw11cjkf");
+        assert_eq!(response.songs[1].album.name, "素颜");
+        assert_eq!(response.songs[1].artists[0].id, "000CK5xN3yZDJt");
+        assert_eq!(response.songs[2].id, "00264YJC1bmylC");
+        assert_eq!(response.songs[2].album.id, "000aM5Ia10a5d8");
+        assert_eq!(response.songs[2].album.name, "2017安徽卫视上星20周年");
+        assert_eq!(response.songs[2].artists[0].id, "000CK5xN3yZDJt");
     }
 
     #[tokio::test(flavor = "current_thread")]

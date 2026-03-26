@@ -230,6 +230,28 @@ impl From<TSearchResponse> for SearchPlaylistResult {
     }
 }
 
+/// 歌曲详情请求（`music.trackInfo.UniformRuleCtrl`）响应体。
+#[derive(Deserialize)]
+pub(super) struct TSongsDetailResponse {
+    result: TSongsDetailResult,
+}
+
+#[derive(Deserialize)]
+struct TSongsDetailResult {
+    data: TSongsDetailData,
+}
+
+#[derive(Deserialize)]
+struct TSongsDetailData {
+    tracks: Vec<TSong>,
+}
+
+impl From<TSongsDetailResponse> for SongsDetailResult {
+    fn from(value: TSongsDetailResponse) -> Self {
+        Self { songs: collect_into(value.result.data.tracks) }
+    }
+}
+
 /// 歌手详情聚合请求（`SingerInfoInter.GetSingerDetail` +
 /// `SongListInter.GetSingerSongList`）响应体。
 #[derive(Deserialize)]

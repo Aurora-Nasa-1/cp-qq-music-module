@@ -5,7 +5,6 @@ use base64::Engine as _;
 use image::{DynamicImage, ImageFormat, Luma};
 use qrcode::QrCode;
 use serde::Deserialize;
-use serde_json::json;
 
 use super::super::collect_into;
 use crate::models::*;
@@ -280,11 +279,8 @@ struct NTrackId {
 }
 
 impl NPlaylistDetailResponse {
-    pub(super) fn song_detail_payload(&self) -> String {
-        json!(
-            self.playlist.track_ids.iter().map(|item| json!({ "id": item.id })).collect::<Vec<_>>()
-        )
-        .to_string()
+    pub(super) fn song_ids(&self) -> Vec<String> {
+        self.playlist.track_ids.iter().map(|item| item.id.to_string()).collect()
     }
 
     pub(super) fn into_with_songs(self, songs: Vec<Song>) -> PlaylistDetailResult {
@@ -305,8 +301,8 @@ pub(super) struct NSongDetailResponse {
 }
 
 impl NSongDetailResponse {
-    pub(super) fn into_songs(self) -> Vec<Song> {
-        collect_into(self.songs)
+    pub(super) fn into_with(self) -> SongsDetailResult {
+        SongsDetailResult { songs: collect_into(self.songs) }
     }
 }
 

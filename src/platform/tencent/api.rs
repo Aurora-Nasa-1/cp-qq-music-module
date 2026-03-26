@@ -37,9 +37,9 @@ impl TencentClient {
     async fn post<T: serde::de::DeserializeOwned>(
         &self,
         mut body: Value,
-        login: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<T> {
-        let mut comm = match login {
+        let mut comm = match token {
             Some(login_token) => json!({
                 "ct": 19,
                 "cv": 2201,
@@ -82,7 +82,7 @@ impl TencentClient {
         query: &str,
         limit: u64,
         offset: u64,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<SearchSongResult> {
         let page_num = Self::page_num(offset, limit);
         let response = self
@@ -99,7 +99,7 @@ impl TencentClient {
                     "searchid": utils::get_search_id(),
                   }
                 }}),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into())
@@ -110,7 +110,7 @@ impl TencentClient {
         query: &str,
         limit: u64,
         offset: u64,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<SearchArtistResult> {
         let page_num = Self::page_num(offset, limit);
         let response = self
@@ -127,7 +127,7 @@ impl TencentClient {
                     "searchid": utils::get_search_id(),
                   }
                 }}),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into())
@@ -138,7 +138,7 @@ impl TencentClient {
         query: &str,
         limit: u64,
         offset: u64,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<SearchAlbumResult> {
         let page_num = Self::page_num(offset, limit);
         let response = self
@@ -155,7 +155,7 @@ impl TencentClient {
                     "searchid": utils::get_search_id(),
                   }
                 }}),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into())
@@ -166,7 +166,7 @@ impl TencentClient {
         query: &str,
         limit: u64,
         offset: u64,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<SearchPlaylistResult> {
         let page_num = Self::page_num(offset, limit);
         let response = self
@@ -185,7 +185,33 @@ impl TencentClient {
                       }
                     }
                 }),
-                auth,
+                token,
+            )
+            .await?;
+        Ok(response.into())
+    }
+
+    pub(crate) async fn songs_detail(
+        &self,
+        ids: Vec<String>,
+        token: Option<&TencentLoginToken>,
+    ) -> MusicClientResult<SongsDetailResult> {
+        let response = self
+            .post::<TSongsDetailResponse>(
+                json!({
+                    "result": {
+                        "module": "music.trackInfo.UniformRuleCtrl",
+                        "method": "CgiGetTrackInfo",
+                        "param": {
+                            "types": vec![0_u64; ids.len()],
+                            "modify_stamp": vec![0_u64; ids.len()],
+                            "ctx": 0,
+                            "client": 1,
+                            "mids": ids
+                        }
+                    }
+                }),
+                token,
             )
             .await?;
         Ok(response.into())
@@ -196,7 +222,7 @@ impl TencentClient {
         id: &str,
         limit: u64,
         offset: u64,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<ArtistDetailResult> {
         let response = self
             .post::<TSingerDetailResponse>(
@@ -225,7 +251,7 @@ impl TencentClient {
                     }
                   }
                 }),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into_with(offset.saturating_add(limit)))
@@ -234,7 +260,7 @@ impl TencentClient {
     pub(crate) async fn album_detail(
         &self,
         id: &str,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<AlbumDetailResult> {
         let response = self
             .post::<TAlbumDetailResponse>(
@@ -257,7 +283,7 @@ impl TencentClient {
                     }
                   }
                 }),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into())
@@ -266,7 +292,7 @@ impl TencentClient {
     pub(crate) async fn playlist_detail(
         &self,
         id: u64,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<PlaylistDetailResult> {
         let response = self
             .post::<TSonglistDetailResponse>(
@@ -283,7 +309,7 @@ impl TencentClient {
                     }
                   }
                 }),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into())
@@ -292,7 +318,7 @@ impl TencentClient {
     pub(crate) async fn toplist_detail(
         &self,
         id: u64,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<PlaylistDetailResult> {
         let response = self
             .post::<TToplistDetailResponse>(
@@ -306,7 +332,7 @@ impl TencentClient {
                     }
                   }
                 }),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into())
@@ -315,7 +341,7 @@ impl TencentClient {
     pub(crate) async fn get_lyric(
         &self,
         id: &str,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<LyricResult> {
         let response = self
             .post::<TLyricResponse>(
@@ -332,7 +358,7 @@ impl TencentClient {
                     }
                   }
                 }),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into_with(id))
@@ -342,7 +368,7 @@ impl TencentClient {
         &self,
         id: &str,
         level: SongQuality,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<UrlResult> {
         // 按音质从高到低排列候选文件名，并在末尾追加 RS02 普通音质兜底。
         let mut filename = match level {
@@ -398,7 +424,7 @@ impl TencentClient {
                     }
                   }
                 }),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into())
@@ -406,7 +432,7 @@ impl TencentClient {
 
     pub(crate) async fn get_hotkey(
         &self,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<HotkeyResult> {
         let response = self
             .post::<THotkeyResponse>(
@@ -420,7 +446,7 @@ impl TencentClient {
                     }
                   }
                 }),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into())
@@ -428,7 +454,7 @@ impl TencentClient {
 
     pub(crate) async fn get_recommend_playlist(
         &self,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<RecommendPlaylistResult> {
         let response = self
             .post::<TRecommendSonglistResponse>(
@@ -445,7 +471,7 @@ impl TencentClient {
                     }
                   }
                 }),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into())
@@ -453,7 +479,7 @@ impl TencentClient {
 
     pub(crate) async fn get_toplist(
         &self,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<ToplistListResult> {
         let response = self
             .post::<TToplistResponse>(
@@ -464,7 +490,7 @@ impl TencentClient {
                     "param": {}
                   }
                 }),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into())
@@ -472,7 +498,7 @@ impl TencentClient {
 
     pub(crate) async fn get_playlist_categories(
         &self,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<PlaylistCategoriesResult> {
         let response = self
             .post::<TSonglistCategoriesResponse>(
@@ -483,7 +509,7 @@ impl TencentClient {
                     "module": "music.playlist.PlaylistSquare"
                   }
                 }),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into())
@@ -494,7 +520,7 @@ impl TencentClient {
         cat: &str,
         limit: u64,
         offset: u64,
-        auth: Option<&TencentLoginToken>,
+        token: Option<&TencentLoginToken>,
     ) -> MusicClientResult<PlaylistListResult> {
         let page = Self::page_num(offset, limit);
         let category_id =
@@ -514,7 +540,7 @@ impl TencentClient {
                     }
                   }
                 }),
-                auth,
+                token,
             )
             .await?;
         Ok(response.into_with(cat, offset.saturating_add(limit)))

@@ -47,7 +47,7 @@ mod utils;
 /// 详情域请求构建器及其类型态标记。
 pub use detail::{
     DetailAlbumKind, DetailArtistKind, DetailKind, DetailPlaylistKind, DetailRequest,
-    DetailToplistKind,
+    DetailSongKind, DetailToplistKind,
 };
 /// 发现域请求构建器及其类型态标记。
 pub use discover::{

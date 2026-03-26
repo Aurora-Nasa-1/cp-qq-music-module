@@ -54,13 +54,13 @@ impl NeteaseClient {
         &self,
         uri: &str,
         mut body: Value,
-        login: Option<&NeteaseLoginToken>,
+        token: Option<&NeteaseLoginToken>,
     ) -> MusicClientResult<T> {
         body["e_r"] = json!(false);
         body["header"] = json!(EAPI_HEADER_JSON.as_str());
 
         let url = netease_eapi_url(uri);
-        let cookie = match login {
+        let cookie = match token {
             Some(login) => netease_cookie(login, uri),
             None => EAPI_COOKIE_SUFFIX.to_string(),
         };
@@ -166,6 +166,21 @@ impl NeteaseClient {
         Ok(response.into())
     }
 
+    pub(crate) async fn songs_detail(
+        &self,
+        ids: Vec<String>,
+        token: Option<&NeteaseLoginToken>,
+    ) -> MusicClientResult<SongsDetailResult> {
+        let response = self
+            .post::<NSongDetailResponse>(
+                "/api/v3/song/detail",
+                json!({"c": json!(ids.iter().map(|item| json!({ "id": item })).collect::<Vec<_>>()).to_string()}),
+                token,
+            )
+            .await?;
+        Ok(response.into_with())
+    }
+
     pub(crate) async fn artist_detail(
         &self,
         id: &str,
@@ -228,26 +243,9 @@ impl NeteaseClient {
                 token,
             )
             .await?;
-        let payload = response.song_detail_payload();
-        let songs = self.fetch_song_details(&payload, token).await?;
+        let ids = response.song_ids();
+        let songs = self.songs_detail(ids, token).await?.songs;
         Ok(response.into_with_songs(songs))
-    }
-
-    async fn fetch_song_details(
-        &self,
-        payload: &str,
-        token: Option<&NeteaseLoginToken>,
-    ) -> MusicClientResult<Vec<Song>> {
-        let response = self
-            .post::<NSongDetailResponse>(
-                "/api/v3/song/detail",
-                json!({
-                    "c": payload
-                }),
-                token,
-            )
-            .await?;
-        Ok(response.into_songs())
     }
 
     pub(crate) async fn get_lyric(
