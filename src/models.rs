@@ -204,8 +204,8 @@ pub struct AlbumDetailResult {
 /// 歌单详情结果。
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PlaylistDetailResult {
-    /// 歌单 ID（数值形式）。
-    pub id: u64,
+    /// 歌单 ID。
+    pub id: String,
     /// 歌单名。
     pub name: String,
     /// 歌单封面 URL。
@@ -267,7 +267,7 @@ pub struct ToplistListResult {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Toplist {
     /// 榜单 ID。
-    pub id: u64,
+    pub id: String,
     /// 榜单名称。
     pub name: String,
     /// 榜单封面 URL（部分平台可能为空）。

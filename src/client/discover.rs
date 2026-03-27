@@ -157,7 +157,7 @@ impl<'a> DiscoverRequest<'a, DiscoverSearchSuggestsKind> {
         self
     }
 
-    /// 发送热词请求。
+    /// 发送搜索建议请求。
     ///
     /// # 前置条件
     ///

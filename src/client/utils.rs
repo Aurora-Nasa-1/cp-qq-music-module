@@ -1,6 +1,38 @@
 use crate::error::{MusicClientError, MusicClientResult};
 use crate::models::{NeteaseLoginToken, Platform, TencentLoginToken};
 
+/// 音乐资源 ID 输入抽象。
+///
+/// 用于让请求构建器在单个 `id(...)` 方法中同时支持 `u64` 与字符串输入。
+pub trait MusicIdInput {
+    /// 转为请求内部统一使用的字符串 ID。
+    fn into_id_string(self) -> String;
+}
+
+impl MusicIdInput for u64 {
+    fn into_id_string(self) -> String {
+        self.to_string()
+    }
+}
+
+impl MusicIdInput for String {
+    fn into_id_string(self) -> String {
+        self
+    }
+}
+
+impl MusicIdInput for &str {
+    fn into_id_string(self) -> String {
+        self.to_owned()
+    }
+}
+
+impl MusicIdInput for &String {
+    fn into_id_string(self) -> String {
+        self.clone()
+    }
+}
+
 /// 登录 token 的借用视图。
 ///
 /// 用于在请求构建器中以统一形式接收不同平台的 token 引用，
@@ -84,9 +116,39 @@ pub(crate) fn require_id(id: Option<&str>) -> MusicClientResult<&str> {
     }
 }
 
+pub(crate) fn require_digit_str(id: Option<&str>) -> MusicClientResult<u64> {
+    match id {
+        Some(id) => {
+            let digit_str = id.trim();
+            if digit_str.is_empty() || !digit_str.bytes().all(|byte| byte.is_ascii_digit()) {
+                return Err(MusicClientError::MissingId);
+            }
+            digit_str.parse::<u64>().map_err(|_| MusicClientError::MissingId)
+        }
+        _ => Err(MusicClientError::MissingId),
+    }
+}
+
 pub(crate) fn require_category(category: Option<&str>) -> MusicClientResult<&str> {
     match category {
         Some(category) if !category.trim().is_empty() => Ok(category),
         _ => Err(MusicClientError::MissingCategory),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn require_digit_str_accepts_trimmed_digits() {
+        let id = require_digit_str(Some("  12345  ")).expect("digits should be accepted");
+        assert_eq!(id, 12345);
+    }
+
+    #[test]
+    fn require_digit_str_rejects_non_digit_input() {
+        let err = require_digit_str(Some("12ab")).expect_err("non-digit string should be rejected");
+        assert!(matches!(err, MusicClientError::MissingId));
     }
 }

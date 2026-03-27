@@ -70,6 +70,8 @@ pub use search::{
 };
 /// 统一 token 借用类型，用于跨平台鉴权参数传递。
 pub use utils::LoginTokenRef;
+/// 统一 ID 输入抽象，支持 `u64` 与字符串。
+pub use utils::MusicIdInput;
 
 #[cfg(test)]
 mod tests;

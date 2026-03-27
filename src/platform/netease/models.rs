@@ -307,7 +307,7 @@ impl NPlaylistDetailResponse {
 
     pub(super) fn into_with_songs(self, songs: Vec<Song>) -> PlaylistDetailResult {
         PlaylistDetailResult {
-            id: self.playlist.id,
+            id: self.playlist.id.to_string(),
             name: self.playlist.name,
             pic_url: self.playlist.cover_img_url,
             description: self.playlist.description,
@@ -502,7 +502,7 @@ impl From<NToplistResponse> for ToplistListResult {
 impl From<NToplist> for Toplist {
     fn from(value: NToplist) -> Self {
         Self {
-            id: value.id,
+            id: value.id.to_string(),
             name: value.name,
             pic_url: value.pic_url,
             tracks: value.tracks.map(collect_into),

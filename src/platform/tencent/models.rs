@@ -464,7 +464,7 @@ struct TSonglistDetailInfo {
 impl From<TSonglistDetailResponse> for PlaylistDetailResult {
     fn from(value: TSonglistDetailResponse) -> Self {
         Self {
-            id: value.result.data.dirinfo.id,
+            id: value.result.data.dirinfo.id.to_string(),
             name: value.result.data.dirinfo.title,
             pic_url: value.result.data.dirinfo.pic_url,
             description: value.result.data.dirinfo.desc,
@@ -707,7 +707,7 @@ impl From<TToplistSong> for ToplistTrack {
 impl From<TToplistItem> for Toplist {
     fn from(value: TToplistItem) -> Self {
         Self {
-            id: value.top_id,
+            id: value.top_id.to_string(),
             name: value.title,
             pic_url: to_optional_string(value.head_pic_url),
             tracks: if value.song.is_empty() { None } else { Some(collect_into(value.song)) },
@@ -752,7 +752,7 @@ impl From<TToplistDetailResponse> for PlaylistDetailResult {
     fn from(value: TToplistDetailResponse) -> Self {
         let detail = value.result.data;
         Self {
-            id: detail.data.top_id,
+            id: detail.data.top_id.to_string(),
             name: detail.data.title,
             pic_url: detail.data.head_pic_url,
             description: detail.data.intro,

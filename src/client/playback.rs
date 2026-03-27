@@ -18,7 +18,9 @@
 
 use std::marker::PhantomData;
 
-use super::utils::{netease_token, require_id, tencent_token, validate_auth_platform};
+use super::utils::{
+    MusicIdInput, netease_token, require_id, tencent_token, validate_auth_platform,
+};
 use super::{LoginTokenRef, MusicClient};
 use crate::error::MusicClientResult;
 use crate::models::{LyricResult, Platform, SongQuality, UrlResult};
@@ -99,9 +101,9 @@ impl<'a> PlaybackRequest<'a, PlaybackKind> {
 }
 
 impl<'a> PlaybackRequest<'a, PlaybackLyricKind> {
-    /// 设置歌曲 ID（必填且不能为空字符串）。
-    pub fn id(mut self, id: impl Into<String>) -> Self {
-        self.id = Some(id.into());
+    /// 设置歌曲 ID（支持 `u64` 或字符串，必填且不能为空）。
+    pub fn id(mut self, id: impl MusicIdInput) -> Self {
+        self.id = Some(id.into_id_string());
         self
     }
 
@@ -129,9 +131,9 @@ impl<'a> PlaybackRequest<'a, PlaybackLyricKind> {
 }
 
 impl<'a> PlaybackRequest<'a, PlaybackUrlKind> {
-    /// 设置歌曲 ID（必填且不能为空字符串）。
-    pub fn id(mut self, id: impl Into<String>) -> Self {
-        self.id = Some(id.into());
+    /// 设置歌曲 ID（支持 `u64` 或字符串，必填且不能为空）。
+    pub fn id(mut self, id: impl MusicIdInput) -> Self {
+        self.id = Some(id.into_id_string());
         self
     }
 

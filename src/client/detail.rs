@@ -18,7 +18,10 @@
 
 use std::marker::PhantomData;
 
-use super::utils::{netease_token, require_id, tencent_token, validate_auth_platform};
+use super::utils::{
+    MusicIdInput, netease_token, require_digit_str, require_id, tencent_token,
+    validate_auth_platform,
+};
 use super::{LoginTokenRef, MusicClient};
 use crate::error::{MusicClientError, MusicClientResult};
 use crate::models::{
@@ -29,13 +32,13 @@ use crate::models::{
 #[derive(Clone, Copy, Debug)]
 pub struct DetailKind;
 
-/// 歌手详情类型态标记。
-#[derive(Clone, Copy, Debug)]
-pub struct DetailArtistKind;
-
 /// 歌曲详情类型态标记。
 #[derive(Clone, Copy, Debug)]
 pub struct DetailSongKind;
+
+/// 歌手详情类型态标记。
+#[derive(Clone, Copy, Debug)]
+pub struct DetailArtistKind;
 
 /// 专辑详情类型态标记。
 #[derive(Clone, Copy, Debug)]
@@ -58,7 +61,6 @@ pub struct DetailRequest<'a, K> {
     client: &'a MusicClient,
     id: Option<String>,
     song_ids: Option<Vec<String>>,
-    playlist_id: Option<u64>,
     offset: u64,
     limit: u64,
     platform: Platform,
@@ -75,7 +77,6 @@ impl<'a, K> DetailRequest<'a, K> {
             client: self.client,
             id: self.id,
             song_ids: self.song_ids,
-            playlist_id: self.playlist_id,
             offset: self.offset,
             limit: self.limit,
             platform: self.platform,
@@ -106,7 +107,6 @@ impl<'a> DetailRequest<'a, DetailKind> {
             client,
             id: None,
             song_ids: None,
-            playlist_id: None,
             offset: DetailRequest::<DetailKind>::DEFAULT_OFFSET,
             limit: DetailRequest::<DetailKind>::DEFAULT_LIMIT,
             platform: Platform::Netease,
@@ -115,13 +115,13 @@ impl<'a> DetailRequest<'a, DetailKind> {
         }
     }
 
-    /// 切换为歌手详情请求。
-    pub fn artist(self) -> DetailRequest<'a, DetailArtistKind> {
+    /// 切换为歌曲详情请求。
+    pub fn song(self) -> DetailRequest<'a, DetailSongKind> {
         self.into_kind()
     }
 
-    /// 切换为歌曲详情请求。
-    pub fn song(self) -> DetailRequest<'a, DetailSongKind> {
+    /// 切换为歌手详情请求。
+    pub fn artist(self) -> DetailRequest<'a, DetailArtistKind> {
         self.into_kind()
     }
 
@@ -141,10 +141,59 @@ impl<'a> DetailRequest<'a, DetailKind> {
     }
 }
 
+impl<'a> DetailRequest<'a, DetailSongKind> {
+    /// 设置单个歌曲 ID（支持 `u64` 或字符串，必填且不能为空）。
+    pub fn id(mut self, id: impl MusicIdInput) -> Self {
+        self.song_ids.get_or_insert_with(Vec::new).push(id.into_id_string());
+        self
+    }
+
+    /// 设置歌曲 ID 列表（必填，且元素不能为空）。
+    pub fn ids<I, S>(mut self, ids: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: MusicIdInput,
+    {
+        self.song_ids
+            .get_or_insert_with(Vec::new)
+            .extend(ids.into_iter().map(MusicIdInput::into_id_string));
+        self
+    }
+
+    /// 发送歌曲详情请求。
+    ///
+    /// # 前置条件
+    ///
+    /// - 需要先通过 [`Self::id`] 或 [`Self::ids`] 设置歌曲 ID。
+    /// - 若调用过 [`DetailRequest::login`]，其 token 所属平台必须与 [`DetailRequest::platform`]
+    ///   一致。
+    ///
+    /// # Errors
+    ///
+    /// - [`MusicClientError::MissingId`] - 未设置歌曲 `id`，或任一 `id` 为空字符串
+    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
+    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    pub async fn send(self) -> MusicClientResult<SongsDetailResult> {
+        validate_auth_platform(self.platform, self.token)?;
+        let ids = match self.song_ids {
+            Some(ids) if !ids.is_empty() && ids.iter().all(|id| !id.trim().is_empty()) => ids,
+            _ => return Err(MusicClientError::MissingId),
+        };
+        match self.platform {
+            Platform::Netease => {
+                self.client.netease.songs_detail(ids, netease_token(self.token)).await
+            }
+            Platform::Tencent => {
+                self.client.tencent.songs_detail(ids, tencent_token(self.token)).await
+            }
+        }
+    }
+}
+
 impl<'a> DetailRequest<'a, DetailArtistKind> {
-    /// 设置歌手 ID（字符串，必填且不能为空字符串）。
-    pub fn id(mut self, id: impl Into<String>) -> Self {
-        self.id = Some(id.into());
+    /// 设置歌手 ID（支持 `u64` 或字符串，必填且不能为空）。
+    pub fn id(mut self, id: impl MusicIdInput) -> Self {
+        self.id = Some(id.into_id_string());
         self
     }
 
@@ -193,57 +242,10 @@ impl<'a> DetailRequest<'a, DetailArtistKind> {
     }
 }
 
-impl<'a> DetailRequest<'a, DetailSongKind> {
-    /// 设置单个歌曲 ID（字符串，必填且不能为空字符串）。
-    pub fn id(mut self, id: impl Into<String>) -> Self {
-        self.song_ids.get_or_insert_with(Vec::new).push(id.into());
-        self
-    }
-
-    /// 设置歌曲 ID 列表（必填，且元素不能为空字符串）。
-    pub fn ids<I, S>(mut self, ids: I) -> Self
-    where
-        I: IntoIterator<Item = S>,
-        S: Into<String>,
-    {
-        self.song_ids.get_or_insert_with(Vec::new).extend(ids.into_iter().map(Into::into));
-        self
-    }
-
-    /// 发送歌曲详情请求。
-    ///
-    /// # 前置条件
-    ///
-    /// - 需要先通过 [`Self::id`] 或 [`Self::ids`] 设置歌曲 ID。
-    /// - 若调用过 [`DetailRequest::login`]，其 token 所属平台必须与 [`DetailRequest::platform`]
-    ///   一致。
-    ///
-    /// # Errors
-    ///
-    /// - [`MusicClientError::MissingId`] - 未设置歌曲 `id`，或任一 `id` 为空字符串
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
-    pub async fn send(self) -> MusicClientResult<SongsDetailResult> {
-        validate_auth_platform(self.platform, self.token)?;
-        let ids = match self.song_ids {
-            Some(ids) if !ids.is_empty() && ids.iter().all(|id| !id.trim().is_empty()) => ids,
-            _ => return Err(MusicClientError::MissingId),
-        };
-        match self.platform {
-            Platform::Netease => {
-                self.client.netease.songs_detail(ids, netease_token(self.token)).await
-            }
-            Platform::Tencent => {
-                self.client.tencent.songs_detail(ids, tencent_token(self.token)).await
-            }
-        }
-    }
-}
-
 impl<'a> DetailRequest<'a, DetailAlbumKind> {
-    /// 设置专辑 ID（字符串，必填且不能为空字符串）。
-    pub fn id(mut self, id: impl Into<String>) -> Self {
-        self.id = Some(id.into());
+    /// 设置专辑 ID（支持 `u64` 或字符串，必填且不能为空）。
+    pub fn id(mut self, id: impl MusicIdInput) -> Self {
+        self.id = Some(id.into_id_string());
         self
     }
 
@@ -275,9 +277,9 @@ impl<'a> DetailRequest<'a, DetailAlbumKind> {
 }
 
 impl<'a> DetailRequest<'a, DetailPlaylistKind> {
-    /// 设置歌单 ID（数值，必填）。
-    pub fn id(mut self, id: u64) -> Self {
-        self.playlist_id = Some(id);
+    /// 设置歌单 ID（支持 `u64` 或数字字符串，必填）。
+    pub fn id(mut self, id: impl MusicIdInput) -> Self {
+        self.id = Some(id.into_id_string());
         self
     }
 
@@ -291,11 +293,11 @@ impl<'a> DetailRequest<'a, DetailPlaylistKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingId`] - 未设置歌单 `id`
+    /// - [`MusicClientError::MissingId`] - 未设置歌单 `id`，或 `id` 不是纯数字
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<PlaylistDetailResult> {
-        let id = self.playlist_id.ok_or(MusicClientError::MissingId)?;
+        let id = require_digit_str(self.id.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => {
@@ -309,9 +311,9 @@ impl<'a> DetailRequest<'a, DetailPlaylistKind> {
 }
 
 impl<'a> DetailRequest<'a, DetailToplistKind> {
-    /// 设置榜单 ID（数值，必填）。
-    pub fn id(mut self, id: u64) -> Self {
-        self.playlist_id = Some(id);
+    /// 设置榜单 ID（支持 `u64` 或数字字符串，必填）。
+    pub fn id(mut self, id: impl MusicIdInput) -> Self {
+        self.id = Some(id.into_id_string());
         self
     }
 
@@ -327,11 +329,11 @@ impl<'a> DetailRequest<'a, DetailToplistKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingId`] - 未设置榜单 `id`
+    /// - [`MusicClientError::MissingId`] - 未设置榜单 `id`，或 `id` 不是纯数字
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<PlaylistDetailResult> {
-        let id = self.playlist_id.ok_or(MusicClientError::MissingId)?;
+        let id = require_digit_str(self.id.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => {
