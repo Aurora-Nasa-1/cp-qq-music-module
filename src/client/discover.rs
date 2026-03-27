@@ -18,17 +18,23 @@
 
 use std::marker::PhantomData;
 
-use super::utils::{netease_token, require_category, tencent_token, validate_auth_platform};
+use super::utils::{
+    netease_token, require_category, require_keyword, tencent_token, validate_auth_platform,
+};
 use super::{LoginTokenRef, MusicClient};
 use crate::error::MusicClientResult;
 use crate::models::{
     HotkeyResult, Platform, PlaylistCategoriesResult, PlaylistListResult, RecommendPlaylistResult,
-    ToplistListResult,
+    SearchSuggestResult, ToplistListResult,
 };
 
 /// 发现域根类型态标记。
 #[derive(Clone, Copy, Debug)]
 pub struct DiscoverKind;
+
+/// 搜索建议类型态标记。
+#[derive(Clone, Copy, Debug)]
+pub struct DiscoverSearchSuggestsKind;
 
 /// 热词能力类型态标记。
 #[derive(Clone, Copy, Debug)]
@@ -58,6 +64,7 @@ pub struct DiscoverPlaylistListKind;
 pub struct DiscoverRequest<'a, K> {
     client: &'a MusicClient,
     category: Option<String>,
+    keyword: Option<String>,
     offset: u64,
     limit: u64,
     platform: Platform,
@@ -73,6 +80,7 @@ impl<'a, K> DiscoverRequest<'a, K> {
         DiscoverRequest {
             client: self.client,
             category: self.category,
+            keyword: self.keyword,
             offset: self.offset,
             limit: self.limit,
             platform: self.platform,
@@ -102,12 +110,18 @@ impl<'a> DiscoverRequest<'a, DiscoverKind> {
         Self {
             client,
             category: None,
+            keyword: None,
             offset: DiscoverRequest::<DiscoverKind>::DEFAULT_OFFSET,
             limit: DiscoverRequest::<DiscoverKind>::DEFAULT_LIMIT,
             platform: Platform::Netease,
             token: None,
             _kind: PhantomData,
         }
+    }
+
+    /// 切换为搜索推荐请求。
+    pub fn suggests(self) -> DiscoverRequest<'a, DiscoverSearchSuggestsKind> {
+        self.into_kind()
     }
 
     /// 切换为热词请求。
@@ -133,6 +147,38 @@ impl<'a> DiscoverRequest<'a, DiscoverKind> {
     /// 切换为歌单列表请求。
     pub fn playlist_list(self) -> DiscoverRequest<'a, DiscoverPlaylistListKind> {
         self.into_kind()
+    }
+}
+
+impl<'a> DiscoverRequest<'a, DiscoverSearchSuggestsKind> {
+    /// 设置搜索关键词（必填且不能为空字符串）。
+    pub fn keyword(mut self, keyword: impl Into<String>) -> Self {
+        self.keyword = Some(keyword.into());
+        self
+    }
+
+    /// 发送热词请求。
+    ///
+    /// # 前置条件
+    ///
+    /// - 若调用过 [`DiscoverRequest::login`]，其 token 所属平台必须与 [`DiscoverRequest::platform`]
+    ///   一致。
+    ///
+    /// # Errors
+    ///
+    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
+    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    pub async fn send(self) -> MusicClientResult<SearchSuggestResult> {
+        let keyword = require_keyword(self.keyword.as_deref())?;
+        validate_auth_platform(self.platform, self.token)?;
+        match self.platform {
+            Platform::Netease => {
+                self.client.netease.get_search_suggests(keyword, netease_token(self.token)).await
+            }
+            Platform::Tencent => {
+                self.client.tencent.get_search_suggests(keyword, tencent_token(self.token)).await
+            }
+        }
     }
 }
 

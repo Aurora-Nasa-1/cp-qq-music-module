@@ -52,7 +52,8 @@ pub use detail::{
 /// 发现域请求构建器及其类型态标记。
 pub use discover::{
     DiscoverHotkeyKind, DiscoverKind, DiscoverPlaylistCategoriesKind, DiscoverPlaylistListKind,
-    DiscoverRecommendPlaylistKind, DiscoverRequest, DiscoverToplistListKind,
+    DiscoverRecommendPlaylistKind, DiscoverRequest, DiscoverSearchSuggestsKind,
+    DiscoverToplistListKind,
 };
 /// 登录域请求构建器、会话对象与类型态标记。
 pub use login::{LoginKind, LoginRefreshKind, LoginRequest, LoginSession, LoginSessionKind};

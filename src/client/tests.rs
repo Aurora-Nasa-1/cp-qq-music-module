@@ -95,6 +95,14 @@ mod section_validation {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    async fn search_suggests_requires_keyword() {
+        let client = MusicClient::new();
+        let err =
+            client.discover().suggests().send().await.expect_err("missing keyword should fail");
+        assert!(matches!(err, MusicClientError::MissingKeyword));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
     async fn auth_refresh_requires_token() {
         let client = MusicClient::new();
         let err =
@@ -281,13 +289,13 @@ mod section_live_smoke {
         let response = client
             .search()
             .playlist()
-            .keyword("江南")
+            .keyword("华语歌曲粤语版：除了“江南”还有这些歌")
             .platform(Platform::Tencent)
             .send()
             .await
             .expect("search should succeed");
-        assert_eq!(response.playlists[0].id, "1790504159");
-        assert_eq!(response.playlists[0].name, "青春记忆 | 90后校园岁月的流行歌曲");
+        assert_eq!(response.playlists[0].id, "2665887142");
+        assert_eq!(response.playlists[0].name, "华语歌曲粤语版：除了“江南”还有这些歌");
         assert!(response.playlists[0].pic_url.starts_with("http://qpic.y.qq.com/music_cover/"));
     }
 
@@ -682,5 +690,33 @@ mod section_live_smoke {
             .await
             .expect("discover should succeed");
         assert!(response.more);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn netease_discover_suggests_returns_correct_response() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .suggests()
+            .keyword("周杰伦")
+            .platform(Platform::Netease)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert!(response.suggests[0].starts_with("周杰伦"));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn tencent_discover_suggests_returns_correct_response() {
+        let client = MusicClient::new();
+        let response = client
+            .discover()
+            .suggests()
+            .keyword("周杰伦")
+            .platform(Platform::Tencent)
+            .send()
+            .await
+            .expect("discover should succeed");
+        assert!(response.suggests[0].starts_with("周杰伦"));
     }
 }

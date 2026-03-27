@@ -230,6 +230,33 @@ impl From<TSearchResponse> for SearchPlaylistResult {
     }
 }
 
+/// 搜索建议请求（`music.smartboxCgi.SmartBoxCgi.GetSmartBoxResult`）响应体。
+#[derive(Deserialize)]
+pub(super) struct TSearchSuggestResponse {
+    result: TSearchSuggestResult,
+}
+
+#[derive(Deserialize)]
+struct TSearchSuggestResult {
+    data: TSearchSuggestData,
+}
+
+#[derive(Deserialize)]
+struct TSearchSuggestData {
+    items: Vec<TSearchSuggestItem>,
+}
+
+#[derive(Deserialize)]
+struct TSearchSuggestItem {
+    hint: String,
+}
+
+impl From<TSearchSuggestResponse> for SearchSuggestResult {
+    fn from(value: TSearchSuggestResponse) -> Self {
+        Self { suggests: value.result.data.items.into_iter().map(|item| item.hint).collect() }
+    }
+}
+
 /// 歌曲详情请求（`music.trackInfo.UniformRuleCtrl`）响应体。
 #[derive(Deserialize)]
 pub(super) struct TSongsDetailResponse {

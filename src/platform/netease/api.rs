@@ -166,6 +166,23 @@ impl NeteaseClient {
         Ok(response.into())
     }
 
+    pub(crate) async fn get_search_suggests(
+        &self,
+        keyword: &str,
+        token: Option<&NeteaseLoginToken>,
+    ) -> MusicClientResult<SearchSuggestResult> {
+        let response = self
+            .post::<NSearchSuggestResponse>(
+                "/api/search/pc/suggest/keyword/get",
+                json!({
+                    "keyword": keyword,
+                }),
+                token,
+            )
+            .await?;
+        Ok(response.into())
+    }
+
     pub(crate) async fn songs_detail(
         &self,
         ids: Vec<String>,

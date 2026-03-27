@@ -191,6 +191,31 @@ impl TencentClient {
         Ok(response.into())
     }
 
+    pub(crate) async fn get_search_suggests(
+        &self,
+        query: &str,
+        token: Option<&TencentLoginToken>,
+    ) -> MusicClientResult<SearchSuggestResult> {
+        let response = self
+            .post::<TSearchSuggestResponse>(
+                json!({
+                    "result": {
+                      "method": "GetSmartBoxResult",
+                      "module": "music.smartboxCgi.SmartBoxCgi",
+                      "param": {
+                        "num_per_page": 10,
+                        "page_idx": 0,
+                        "query": query,
+                        "search_id": utils::get_search_id(),
+                      }
+                    }
+                }),
+                token,
+            )
+            .await?;
+        Ok(response.into())
+    }
+
     pub(crate) async fn songs_detail(
         &self,
         ids: Vec<String>,

@@ -155,6 +155,13 @@ pub struct Playlist {
     pub pic_url: String,
 }
 
+/// 搜索建议结果。
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct SearchSuggestResult {
+    /// 当前页歌单列表。
+    pub suggests: Vec<String>,
+}
+
 /// 歌曲详情结果。
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SongsDetailResult {

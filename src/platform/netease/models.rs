@@ -186,6 +186,28 @@ impl From<NPlaylist> for Playlist {
     }
 }
 
+/// `/api/search/pc/suggest/keyword/get`（搜索建议) 响应体。
+#[derive(Deserialize)]
+pub(super) struct NSearchSuggestResponse {
+    data: NSearchSuggestData,
+}
+
+#[derive(Deserialize)]
+struct NSearchSuggestData {
+    suggests: Vec<NSearchSuggestItem>,
+}
+
+#[derive(Deserialize)]
+struct NSearchSuggestItem {
+    keyword: String,
+}
+
+impl From<NSearchSuggestResponse> for SearchSuggestResult {
+    fn from(value: NSearchSuggestResponse) -> Self {
+        Self { suggests: value.data.suggests.into_iter().map(|item| item.keyword).collect() }
+    }
+}
+
 /// `/api/batch`（歌手详情与歌曲列表）聚合响应体。
 #[derive(Deserialize)]
 pub(super) struct NArtistDetailResponse {
