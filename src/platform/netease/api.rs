@@ -1,4 +1,10 @@
+//! 网易云 API 请求实现。
+//!
+//! 该模块负责组装 EAPI 请求、注入可选登录态，并把平台响应转换为 [`crate::models`] 中
+//! 的统一返回模型。
+
 use std::sync::LazyLock;
+use std::time::Duration;
 
 use cookie::Cookie;
 use reqwest::Client;
@@ -31,16 +37,20 @@ const EAPI_COOKIE_SUFFIX: &str =
      clientSign=18:C0:4D:B9:8F:FE@@@\
      453832335F384641365F424635335F303030315F303031425F343434415F343643365F333638332@@@@@@\
      6ff673ef74955b38bce2fa8562d95c976ed4758b1227c4e9ee345987cee17bc9";
+const HTTP_TIMEOUT: Duration = Duration::from_secs(15);
 
 pub(crate) struct NeteaseClient {
     client: Client,
 }
 
 impl NeteaseClient {
+    /// 创建网易云请求客户端。
     pub(crate) fn new() -> Self {
         Self {
             client: Client::builder()
                 .no_proxy()
+                .timeout(HTTP_TIMEOUT)
+                .connect_timeout(HTTP_TIMEOUT)
                 .user_agent(
                     "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) \
                      Safari/537.36 Chrome/91.0.4472.164 NeteaseMusicDesktop/3.0.18.203152",
@@ -396,7 +406,7 @@ impl NeteaseClient {
                 None,
             )
             .await?;
-        Ok(response.into())
+        response.into_qr_result()
     }
 
     pub(crate) async fn get_login_token(&self, key: &str) -> MusicClientResult<LoginStatus> {

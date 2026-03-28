@@ -1,3 +1,11 @@
+#![allow(rustdoc::private_intra_doc_links)]
+//! QQ 音乐请求辅助工具。
+//!
+//! # Overview
+//!
+//! 本模块封装 QQ 音乐请求中复用的 GUID、搜索 ID、签名与哈希算法，供
+//! [`super::api::TencentClient`] 复用。
+
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use base64::Engine;
@@ -27,6 +35,9 @@ pub fn get_guid() -> String {
         .collect()
 }
 
+/// 计算 QQ 登录态常用的 `hash33` 值。
+///
+/// 该实现依赖 [`HASH33_INIT`] 与 [`HASH33_MASK`] 常量，确保与平台算法一致。
 pub fn hash33(s: &str) -> u64 {
     let mut h = HASH33_INIT;
     for c in s.chars() {
@@ -35,6 +46,10 @@ pub fn hash33(s: &str) -> u64 {
     h & HASH33_MASK
 }
 
+/// 生成 QQ 搜索请求 ID。
+///
+/// 该值依赖 [`SEARCH_ID_E_BASE`]、[`SEARCH_ID_N_BASE`]、[`SEARCH_ID_N_MAX`] 与
+/// [`DAY_MILLIS`] 常量，用于保持与平台分页查询协议一致。
 pub fn get_search_id() -> String {
     let mut rng = rand::rng();
     let e = rng.random_range(1_u64..=20);
@@ -45,6 +60,10 @@ pub fn get_search_id() -> String {
     (t + n + r).to_string()
 }
 
+/// 计算 QQ 网关签名字段。
+///
+/// 该算法依赖 [`SIGN_PART_1_INDEXES`]、[`SIGN_PART_2_INDEXES`] 与
+/// [`SIGN_SCRAMBLE_VALUES`] 常量，返回值用于请求验签。
 pub fn sign(request: &Value) -> String {
     let payload = serde_json::to_vec(request).expect("serialize qq request body");
     let hash = hex::encode_upper(Sha1::digest(payload));

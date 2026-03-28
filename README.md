@@ -1,49 +1,44 @@
 # music-bridge-rs
 
-`music-bridge-rs` 是一个 Rust 异步库，提供统一的音乐客户端接口，封装网易云音乐（Netease）与 QQ 音乐（Tencent）的常见能力。
+统一的异步音乐客户端，提供网易云音乐与 QQ 音乐的一致化调用接口。
 
-目标是让上层业务通过一致的调用方式完成搜索、详情、播放、登录、歌单和发现等操作，而不必分别处理两个平台的接口细节。
+- 统一入口：`MusicClient`
+- 统一模型：`models`
+- 统一错误：`MusicClientError`
+- 调用风格：typed builder（链式构建 + 编译期类型态约束）
+
+---
 
 > [!IMPORTANT]
-> 请遵守当地法律法规与各音乐平台服务条款，尊重版权并支持正版。  
-> 本项目不内置、不分发任何音频文件或付费资源。
+> 本项目内容仅用于学习与技术研究，禁止用于商业用途或任何侵权场景。  
+> 请遵守当地法律法规及平台服务条款，尊重版权并支持正版。  
+> 请勿将本项目用于绕过付费/会员限制、批量下载、未授权传播或再分发音乐内容。  
+> 因使用或无法使用本项目产生的风险与责任，由使用者自行承担。
 
-## 功能概览
+---
 
-- 统一客户端入口：`MusicClient`
-- 统一平台枚举：`Platform::{Netease, Tencent}`
-- 链式请求构建器（typed builder）
-- 已支持能力：
-  - `search`：歌曲/歌手/专辑/歌单搜索
-  - `detail`：歌手/专辑/歌单/榜单详情
-  - `playback`：歌词、播放链接
-  - `discover`：热词、推荐歌单、榜单、歌单分类、歌单列表
-  - `playlist`：歌单详情、分类、列表
-  - `login`：二维码登录会话、登录状态轮询、Token 刷新
+## 适用场景
+
+- 同时接入网易云与 QQ 音乐，但不想维护两套 API 适配层
+- 需要统一的搜索、详情、播放、发现、歌单与登录流程
+- 希望以强类型和一致错误语义组织上层业务代码
 
 ## 安装
 
-### 1) crates.io
-
 ```toml
 [dependencies]
-music-bridge-rs = "0.1.0"
+music-bridge-rs = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 ```
-
-### 2) 运行环境
-
-- Rust edition: `2024`
-- 异步运行时：`tokio`
 
 ## 快速开始
 
 ```rust
-use music_bridge_rs::client::MusicClient;
+use music_bridge_rs::MusicClient;
 use music_bridge_rs::models::Platform;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), music_bridge_rs::MusicClientError> {
     let client = MusicClient::new();
 
     let result = client
@@ -55,145 +50,134 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .send()
         .await?;
 
-    for song in result.songs {
-        println!("{} - {}", song.id, song.name);
-    }
-
+    println!("songs: {}", result.songs.len());
     Ok(())
 }
 ```
 
-## 统一调用模型
+## 核心规则
 
-调用形式统一为：
+- 默认平台是 `Platform::Netease`，可通过 `.platform(Platform::Tencent)` 切换
+- 所有请求最终都通过 `.send().await` 发起
+- 支持鉴权的请求可通过 `.login(&token)` 注入登录态
+- `detail` / `playback` 的 `id(...)` 支持 `impl MusicIdInput`（可传 `u64`、`String`、`&str`）
+- `detail.playlist()`、`detail.toplist()`、`playlist.detail()` 在发送前都会校验 `id` 必须是纯数字字符串
 
-```text
-client.<domain>().<kind>().<params>().send().await
-```
+## API 速查
 
-说明：
+| 域         | 子能力                                                                   | 必填参数      | 可选参数                               | 返回类型                                                                                      |
+| ---------- | ------------------------------------------------------------------------ | ------------- | -------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `search`   | `song` / `artist` / `album` / `playlist`                                 | `keyword`     | `offset`, `limit`, `platform`, `login` | `SearchSongResult` / `SearchArtistResult` / `SearchAlbumResult` / `SearchPlaylistResult`      |
+| `detail`   | `song`                                                                   | `id` 或 `ids` | `platform`, `login`                    | `SongsDetailResult`                                                                           |
+| `detail`   | `artist`                                                                 | `id`          | `offset`, `limit`, `platform`, `login` | `ArtistDetailResult`                                                                          |
+| `detail`   | `album` / `playlist` \| `toplist`                                        | `id`          | `platform`, `login`                    | `AlbumDetailResult` / `PlaylistDetailResult`                                                  |
+| `playback` | `lyric`                                                                  | `id`          | `platform`, `login`                    | `LyricResult`                                                                                 |
+| `playback` | `url`                                                                    | `id`          | `level`, `platform`, `login`           | `UrlResult`                                                                                   |
+| `discover` | `suggests`                                                               | `keyword`     | `platform`, `login`                    | `SearchSuggestResult`                                                                         |
+| `discover` | `hotkey` / `recommend_playlist` / `toplist_list` / `playlist_categories` | 无            | `platform`, `login`                    | `HotkeyResult` / `RecommendPlaylistResult` / `ToplistListResult` / `PlaylistCategoriesResult` |
+| `discover` | `playlist_list`                                                          | `category`    | `offset`, `limit`, `platform`, `login` | `PlaylistListResult`                                                                          |
+| `playlist` | `detail`                                                                 | `id`          | `platform`, `login`                    | `PlaylistDetailResult`                                                                        |
+| `playlist` | `categories`                                                             | 无            | `platform`, `login`                    | `PlaylistCategoriesResult`                                                                    |
+| `playlist` | `list`                                                                   | `category`    | `offset`, `limit`, `platform`, `login` | `PlaylistListResult`                                                                          |
+| `login`    | `session`                                                                | 无            | `platform`                             | `LoginSession`                                                                                |
+| `login`    | `refresh`                                                                | `token`       | `platform`                             | `LoginToken`                                                                                  |
 
-- 默认平台是 `Platform::Netease`
-- 通用分页默认值：`offset = 0`, `limit = 20`（适用于支持分页的请求）
-- 需要登录态的请求可通过 `.login(&token)` 注入平台 Token
-- 若平台与 Token 类型不一致，会返回 `MusicClientError::AuthTokenPlatformMismatch`
+## 使用示例
 
-## API 能力与返回类型
-
-| 域 | 子能力 | 必填参数 | 返回类型 |
-| --- | --- | --- | --- |
-| `search` | `song` / `artist` / `album` / `playlist` | `keyword` | `SearchSongResult` / `SearchArtistResult` / `SearchAlbumResult` / `SearchPlaylistResult` |
-| `detail` | `artist` / `album` | `id: String` | `ArtistDetailResult` / `AlbumDetailResult` |
-| `detail` | `playlist` / `toplist` | `id: u64` | `PlaylistDetailResult` |
-| `playback` | `lyric` | `id: String` | `LyricResult` |
-| `playback` | `url` | `id: String` | `UrlResult` |
-| `discover` | `hotkey` / `recommend_playlist` / `toplist_list` / `playlist_categories` | 无 | 对应统一模型 |
-| `discover` | `playlist_list` | `category` | `PlaylistListResult` |
-| `playlist` | `detail` | `id: u64` | `PlaylistDetailResult` |
-| `playlist` | `categories` | 无 | `PlaylistCategoriesResult` |
-| `playlist` | `list` | `category` | `PlaylistListResult` |
-| `login` | `session` | 无 | `LoginSession` |
-| `login` | `refresh` | `token` | `LoginToken` |
-
-## 常见调用示例
-
-### 1) 搜索
+### 搜索
 
 ```rust
-use music_bridge_rs::client::MusicClient;
+use music_bridge_rs::MusicClient;
 use music_bridge_rs::models::Platform;
 
-async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::error::MusicClientError> {
+async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientError> {
     let songs = client
         .search()
         .song()
         .keyword("林俊杰")
-        .platform(Platform::Netease)
-        .limit(10)
+        .platform(Platform::Tencent)
+        .limit(20)
         .offset(0)
         .send()
         .await?;
 
-    println!("songs = {}", songs.songs.len());
+    println!("first song id: {}", songs.songs[0].id);
     Ok(())
 }
 ```
 
-### 2) 详情与播放
+### 详情与播放
 
 ```rust
-use music_bridge_rs::client::MusicClient;
+use music_bridge_rs::MusicClient;
 use music_bridge_rs::models::{Platform, SongQuality};
 
-async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::error::MusicClientError> {
+async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientError> {
     let artist = client
         .detail()
         .artist()
         .id("3684")
         .platform(Platform::Netease)
+        .limit(10)
         .send()
         .await?;
-    println!("artist = {}", artist.name);
 
-    let lyric = client
-        .playback()
-        .lyric()
-        .id("108914")
+    let song = client
+        .detail()
+        .song()
+        .id(108914u64)
         .platform(Platform::Netease)
         .send()
         .await?;
-    println!("lyric length = {}", lyric.lyric.len());
 
     let url = client
         .playback()
         .url()
-        .id("108914")
-        .level(SongQuality::Standard)
-        .platform(Platform::Netease)
+        .id(song.songs[0].id.as_str())
+        .level(SongQuality::Lossless)
         .send()
         .await?;
-    println!("play url = {}", url.url);
 
+    println!("artist: {}, play url: {}", artist.name, url.url);
     Ok(())
 }
 ```
 
-### 3) 发现与歌单
+### 发现与歌单
 
 ```rust
-use music_bridge_rs::client::MusicClient;
+use music_bridge_rs::MusicClient;
 use music_bridge_rs::models::Platform;
 
-async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::error::MusicClientError> {
-    let toplists = client
+async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientError> {
+    let suggests = client
         .discover()
-        .toplist_list()
-        .platform(Platform::Netease)
+        .suggests()
+        .keyword("周杰伦")
+        .platform(Platform::Tencent)
         .send()
         .await?;
-    println!("toplists = {}", toplists.toplists.len());
 
-    let playlists = client
+    let categories = client
         .playlist()
-        .list()
+        .categories()
         .platform(Platform::Netease)
-        .category("流行")
-        .limit(20)
         .send()
         .await?;
-    println!("playlist list = {}", playlists.playlists.len());
 
+    println!("suggest count: {}", suggests.suggests.len());
+    println!("category groups: {}", categories.group.len());
     Ok(())
 }
 ```
 
-### 4) 二维码登录（QQ 音乐）+ 登录态请求
+### 二维码登录与轮询状态
 
 ```rust
-use music_bridge_rs::client::MusicClient;
-use music_bridge_rs::models::{LoginStatus, LoginToken, Platform};
+use music_bridge_rs::MusicClient;
+use music_bridge_rs::models::{LoginStatus, Platform};
 
-async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::error::MusicClientError> {
+async fn login_demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientError> {
     let session = client
         .login()
         .session()
@@ -201,136 +185,102 @@ async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::error::MusicC
         .send()
         .await?;
 
-    // qr_code 为 data:image/png;base64,...，可渲染后扫码
-    println!("qr_code: {}", session.qr_code());
+    println!("qr data url: {}", session.qr_code());
 
     loop {
         match session.status().await? {
-            LoginStatus::WaitingScan => println!("waiting scan..."),
-            LoginStatus::WaitingConfirm => println!("waiting confirm..."),
-            LoginStatus::QrCodeExpired => break,
-            LoginStatus::Success(LoginToken::Tencent(token)) => {
-                let recommend = client
-                    .discover()
-                    .recommend_playlist()
-                    .platform(Platform::Tencent)
-                    .login(&token)
-                    .send()
-                    .await?;
-                println!("recommend playlists = {}", recommend.playlists.len());
+            LoginStatus::Success(token) => {
+                println!("login success: {:?}", token);
                 break;
             }
-            LoginStatus::Success(LoginToken::Netease(_)) => {}
+            LoginStatus::QrCodeExpired => {
+                println!("qr expired, recreate session");
+                break;
+            }
+            LoginStatus::WaitingScan => println!("waiting scan"),
+            LoginStatus::WaitingConfirm => println!("waiting confirm"),
         }
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
     }
 
     Ok(())
 }
 ```
 
-### 5) Token 刷新
+### 刷新登录态
 
 ```rust
-use music_bridge_rs::client::MusicClient;
+use music_bridge_rs::MusicClient;
 use music_bridge_rs::models::{LoginToken, Platform, TencentLoginToken};
 
-async fn refresh_qq_token(
-    client: &MusicClient,
-    token: &TencentLoginToken,
-) -> Result<LoginToken, music_bridge_rs::error::MusicClientError> {
-    client.login().refresh().platform(Platform::Tencent).token(token).send().await
+async fn refresh_demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientError> {
+    let token = TencentLoginToken::new(
+        123456,
+        "music_key",
+        "refresh_token",
+        "refresh_key",
+        None,
+        1,
+    );
+
+    let refreshed = client
+        .login()
+        .refresh()
+        .platform(Platform::Tencent)
+        .token(&token)
+        .send()
+        .await?;
+
+    if let LoginToken::Tencent(new_token) = refreshed {
+        println!("new expires_at: {:?}", new_token.expires_at());
+    }
+
+    Ok(())
 }
 ```
 
-## 错误处理
+## 错误处理建议
 
-统一错误类型：`music_bridge_rs::error::MusicClientError`。
+常见错误分组：
 
-常见错误：
-
-- `MissingKeyword`：搜索关键词缺失
-- `MissingId`：详情/播放等请求缺少 ID
-- `MissingCategory`：歌单列表缺少分类
-- `MissingRefreshToken`：刷新登录态时缺少 token
-- `InvalidCategoryId`：QQ 音乐歌单分类参数无法解析为合法分类 ID
-- `AuthTokenPlatformMismatch`：平台与传入 token 不匹配
-- `NeteaseUnexpectedLoginStatus`：网易二维码登录状态码不在已知范围
-- `NeteaseLoginTokenInvalid`：网易登录/刷新返回成功但无法解析出有效 token cookie
-- `InvalidTencentLoginTokenField`：QQ 登录/刷新响应字段缺失或非法
-- `TencentLoginCanceled`：QQ 扫码登录被用户取消
-- `TencentLoginFailed`：QQ 扫码登录失败
-- `TencentMqttLogin`：QQ MQTT 登录链路异常
+- 参数缺失：`MissingKeyword`、`MissingId`、`MissingCategory`、`MissingRefreshToken`
+- 鉴权不匹配：`AuthTokenPlatformMismatch`
+- 登录链路：`MissingTencentLoginSession`、`TencentLoginCanceled`、`TencentMqttLogin` 等
+- 网络错误：`NetworkError`
 
 示例：
 
 ```rust
-use music_bridge_rs::client::MusicClient;
+use music_bridge_rs::MusicClient;
 use music_bridge_rs::error::MusicClientError;
 
-async fn demo(client: &MusicClient) {
-    let result = client.search().send().await;
-    if let Err(MusicClientError::MissingKeyword) = result {
-        println!("keyword is required");
+async fn error_demo(client: &MusicClient) {
+    let result = client.search().song().send().await;
+    match result {
+        Ok(_) => {}
+        Err(MusicClientError::MissingKeyword) => {
+            eprintln!("please provide keyword");
+        }
+        Err(err) => {
+            eprintln!("request failed: {err}");
+        }
     }
 }
 ```
 
-## 测试与检查
+## 文档与链接
 
-```bash
-# 编译检查
-cargo check
+- Crates.io: <https://crates.io/crates/music-bridge-rs>
+- Docs.rs: <https://docs.rs/music-bridge-rs>
+- Repository: <https://github.com/AstronW/music-bridge-rs>
 
-# 格式化
-cargo +nightly fmt
+## 参考与致谢
 
-# lint
-cargo clippy --all-targets --all-features -- -D warnings
+本项目在接口行为理解与字段映射过程中参考了以下项目：
 
-# 默认测试（不含 ignore 的在线测试）
-cargo test
+- [QQMusicApi](https://github.com/L-1124/QQMusicApi)
+- [NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)
 
-# 包含在线依赖/人工交互流程测试
-cargo test -- --ignored
-```
+## License
 
-## 项目结构
-
-```text
-src/
-  client/      # 对外链式 API 与请求构建器
-  platform/    # 平台内部实现（netease / tencent）
-  models.rs    # 跨平台统一数据模型
-  error.rs     # 统一错误定义
-  lib.rs       # 模块导出
-```
-
-## 版权与合规
-
-- 本库仅封装客户端调用流程与数据模型，不内置、不分发任何音频文件、曲库资源或版权内容。
-- 不提供破解、绕过付费/会员限制、绕过 DRM、批量抓取或去除版权标识等能力。
-- 涉及账号登录与接口调用时，使用者应确保账号、Token 与访问行为合法合规，并获得必要授权。
-- 请勿将本库用于未获授权的传播、下载、转存或再分发音乐内容。
-
-## 许可证
-
-本项目基于 [MIT License](./LICENSE) 许可证发布。
-
-## Acknowledgements
-
-本项目在接口理解与实现过程中参考了以下开源项目：
-
-- [L-1124/QQMusicApi](https://github.com/L-1124/QQMusicApi)
-- [Binaryify/NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)
-
-感谢原作者与贡献者的开源工作。若本项目中存在需要补充的归属说明，请通过 issue 联系我。
-
-## 免责声明
-
-因使用（或无法使用）本项目导致的任何直接或间接损失、数据问题、账号风险、服务封禁或法律责任，均由使用者自行承担。
-
-## 注意事项
-
-- 该库不对外暴露 `platform` 实现细节，请通过 `client` 与 `models` 使用能力。
-- 登录 token 含敏感信息，请勿提交到仓库或日志系统。
-- 若要手动构造 token，请使用 `NeteaseLoginToken::new(...)` / `TencentLoginToken::new(...)`，不要依赖内部字段。
+MIT

@@ -1,3 +1,8 @@
+//! 网易云平台原始响应模型与统一模型转换。
+//!
+//! 本模块仅承载网易云接口响应结构体与 [`Into`] 转换逻辑；跨平台统一模型定义见
+//! [`crate::models`]。
+
 use std::collections::HashMap;
 use std::io::Cursor;
 
@@ -7,6 +12,7 @@ use qrcode::QrCode;
 use serde::Deserialize;
 
 use super::super::collect_into;
+use crate::error::{MusicClientError, MusicClientResult};
 use crate::models::*;
 
 /// `/api/cloudsearch/pc`（单曲搜索）响应体。
@@ -565,20 +571,20 @@ pub(super) struct NLoginQrResponse {
     unikey: String,
 }
 
-impl From<NLoginQrResponse> for LoginQrResult {
-    fn from(value: NLoginQrResponse) -> Self {
-        let code =
-            QrCode::new(format!("https://music.163.com/login?codekey={}", value.unikey)).unwrap();
+impl NLoginQrResponse {
+    pub(super) fn into_qr_result(self) -> MusicClientResult<LoginQrResult> {
+        let code = QrCode::new(format!("https://music.163.com/login?codekey={}", self.unikey))
+            .map_err(|err| MusicClientError::NeteaseLoginQrCode(err.to_string()))?;
         let image = code.render::<Luma<u8>>().quiet_zone(true).module_dimensions(8, 8).build();
         let mut png_bytes = Vec::new();
         DynamicImage::ImageLuma8(image)
             .write_to(&mut Cursor::new(&mut png_bytes), ImageFormat::Png)
-            .expect("qrcode png encode should succeed");
+            .map_err(|err| MusicClientError::NeteaseLoginQrCode(err.to_string()))?;
         let qr_code = format!(
             "data:image/png;base64,{}",
             base64::engine::general_purpose::STANDARD.encode(png_bytes)
         );
-        Self { qr_key: value.unikey, qr_code }
+        Ok(LoginQrResult { qr_key: self.unikey, qr_code })
     }
 }
 

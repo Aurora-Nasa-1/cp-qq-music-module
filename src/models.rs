@@ -3,12 +3,19 @@
 //! # Overview
 //!
 //! 本模块承载所有公开返回模型、平台枚举、登录 token 类型与音质枚举。
-//! `client` 模块各请求构建器会统一返回这里定义的类型，屏蔽平台原始响应差异。
+//! [`crate::client`] 模块中的请求构建器统一返回这里定义的类型，用于屏蔽平台原始响应差异。
 //!
 //! # Core Concepts
 //!
 //! - 平台标识：[`Platform`][`crate::models::Platform`]
-//! - 搜索/详情/歌单相关结构体：`Search*Result`、`*DetailResult`、`Playlist*`
+//! - 搜索/详情/歌单相关结构体：[`crate::models::SearchSongResult`]、
+//!   [`crate::models::SearchArtistResult`]、
+//!   [`crate::models::SearchAlbumResult`]、[`crate::models::SearchPlaylistResult`]、
+//!   [`crate::models::SongsDetailResult`]、
+//!   [`crate::models::ArtistDetailResult`]、[`crate::models::AlbumDetailResult`]、
+//!   [`crate::models::PlaylistDetailResult`]、
+//!   [`crate::models::Playlist`]、[`crate::models::PlaylistCategoriesResult`]、
+//!   [`crate::models::PlaylistListResult`]
 //! - 登录相关结构体：[`LoginStatus`][`crate::models::LoginStatus`]、
 //!   [`LoginToken`][`crate::models::LoginToken`]
 //! - 播放相关结构体：[`LyricResult`][`crate::models::LyricResult`]、
@@ -143,8 +150,8 @@ pub struct SearchPlaylistResult {
 
 /// 跨平台统一歌单概要模型。
 ///
-/// 该结构通常用于搜索与列表场景，`id` 统一为字符串表示。
-/// 如需详情页请求，请注意 [`PlaylistDetailResult::id`] 是数值类型。
+/// 该结构通常用于搜索与列表场景，[`Playlist::id`] 统一为字符串表示。
+/// 详情页结果中的 [`PlaylistDetailResult::id`] 也保持字符串表示。
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Playlist {
     /// 歌单 ID（字符串形式，可能来自不同平台的不同编码规则）。
@@ -158,7 +165,7 @@ pub struct Playlist {
 /// 搜索建议结果。
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SearchSuggestResult {
-    /// 当前页歌单列表。
+    /// 搜索建议列表。
     pub suggests: Vec<String>,
 }
 
@@ -223,7 +230,7 @@ pub struct LyricResult {
     pub id: String,
     /// 原文歌词。
     pub lyric: String,
-    /// 翻译歌词（若平台提供；缺失时为 `None`）。
+    /// 翻译歌词（若平台提供；缺失时为 [`None`]）。
     pub trans_lyric: Option<String>,
 }
 
@@ -297,7 +304,9 @@ pub struct PlaylistCategoriesResult {
 /// 单个歌单分类。
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PlaylistCategory {
-    /// 分类 ID（字符串形式，可直接用于 `playlist_list`/`playlist().list()` 入参）。
+    /// 分类 ID（字符串形式，可直接用于
+    /// [`crate::client::DiscoverRequest::playlist_list`] /
+    /// [`crate::client::PlaylistRequest::list`] 场景）。
     pub id: String,
     /// 分类名称。
     pub name: String,
@@ -388,7 +397,7 @@ pub struct NeteaseLoginToken {
 impl NeteaseLoginToken {
     /// 构造网易云登录 token。
     ///
-    /// `expires_at` 为 Unix 时间戳（秒），`None` 表示未知过期时间。
+    /// `expires_at` 为 Unix 时间戳（秒），[`None`] 表示未知过期时间。
     pub fn new(
         music_u: impl Into<String>,
         music_r_u: impl Into<String>,
@@ -405,7 +414,7 @@ impl NeteaseLoginToken {
 
     /// 判断 token 是否已过期。
     ///
-    /// 当 `expires_at` 为 `None` 时返回 `false`。
+    /// 当 `expires_at` 为 [`None`] 时返回 `false`。
     pub fn is_expired(&self) -> bool {
         self.expires_at
             .is_some_and(|expires_at| OffsetDateTime::now_utc().unix_timestamp() >= expires_at)
@@ -442,7 +451,7 @@ pub struct TencentLoginToken {
 impl TencentLoginToken {
     /// 构造 QQ 音乐登录 token。
     ///
-    /// `expires_at` 为 Unix 时间戳（秒），`None` 表示未知过期时间。
+    /// `expires_at` 为 Unix 时间戳（秒），[`None`] 表示未知过期时间。
     /// `login_type` 为平台定义的登录类型值。
     pub fn new(
         music_id: u64,

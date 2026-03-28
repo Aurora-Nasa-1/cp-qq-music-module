@@ -1,3 +1,17 @@
+#![allow(rustdoc::private_intra_doc_links)]
+//! QQ 扫码登录 MQTT 会话实现。
+//!
+//! # Overview
+//!
+//! 本模块负责维护扫码登录期间的 MQTT 连接状态，并将平台事件映射为
+//! [`MqttLoginEvent`]。
+//!
+//! # Errors and Limits
+//!
+//! 重试与超时行为由 [`MQTT_CONNECT_TIMEOUT`]、[`MQTT_SUBACK_TIMEOUT`]、
+//! [`MQTT_EVENT_WAIT_TIMEOUT`]、[`MQTT_CALL_TIMEOUT`]、[`MQTT_DEFAULT_INTERVAL`] 与
+//! [`MQTT_ERROR_INTERVAL`] 控制。
+
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use async_tungstenite::tokio::{ConnectStream, connect_async};
@@ -76,6 +90,7 @@ pub(crate) struct MqttLoginSession {
 }
 
 impl MqttLoginSession {
+    /// 基于二维码 ID 创建 MQTT 登录会话。
     pub(crate) fn new(qrcode_id: &str) -> Self {
         Self {
             qrcode_id: qrcode_id.to_owned(),

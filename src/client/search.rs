@@ -3,7 +3,7 @@
 //! # Overview
 //!
 //! 该模块提供跨平台搜索能力，包括歌曲、歌手、专辑、歌单四类检索。
-//! 所有请求默认平台为 `Netease`，可通过 `.platform(...)` 切换。
+//! 所有请求默认平台为 [`Platform::Netease`]，可通过 [`SearchRequest::platform`] 切换。
 //!
 //! # Quick Start
 //!
@@ -18,10 +18,12 @@
 //!
 //! # Common Workflow
 //!
-//! 1. `client.search()` 获取根构建器。
-//! 2. 选择子能力：`.song()/.artist()/.album()/.playlist()`。
-//! 3. 设置必填参数 `.keyword(...)`，可选分页参数 `.offset(...)`、`.limit(...)`。
-//! 4. 调用 `.send().await`。
+//! 1. 通过 [`MusicClient::search`] 获取根构建器。
+//! 2. 选择子能力：[`SearchRequest::song`]、[`SearchRequest::artist`]、
+//!    [`SearchRequest::album`]、[`SearchRequest::playlist`]。
+//! 3. 设置必填参数 [`SearchRequest::keyword`]，并按需设置分页参数 [`SearchRequest::offset`] 与
+//!    [`SearchRequest::limit`]。
+//! 4. 调用 `send().await`。
 
 use std::marker::PhantomData;
 
@@ -56,7 +58,7 @@ pub struct SearchPlaylistKind;
 ///
 /// `K` 为类型态参数，用于约束当前已选择的搜索子能力。
 ///
-/// 默认分页参数为 `offset = 0`、`limit = 20`。
+/// 默认分页参数由内部常量维护。
 pub struct SearchRequest<'a, K> {
     client: &'a MusicClient,
     keyword: Option<String>,
@@ -89,19 +91,21 @@ impl<'a, K> SearchRequest<'a, K> {
         self
     }
 
-    /// 设置分页偏移量，默认 `0`。
+    #[allow(rustdoc::private_intra_doc_links)]
+    /// 设置分页偏移量，默认值见 [`Self::DEFAULT_OFFSET`]。
     pub fn offset(mut self, offset: u64) -> Self {
         self.offset = offset;
         self
     }
 
-    /// 设置分页大小，默认 `20`。
+    #[allow(rustdoc::private_intra_doc_links)]
+    /// 设置分页大小，默认值见 [`Self::DEFAULT_LIMIT`]。
     pub fn limit(mut self, limit: u64) -> Self {
         self.limit = limit;
         self
     }
 
-    /// 设置请求平台，默认 `Platform::Netease`。
+    /// 设置请求平台，默认 [`Platform::Netease`]。
     pub fn platform(mut self, platform: Platform) -> Self {
         self.platform = platform;
         self
@@ -110,7 +114,7 @@ impl<'a, K> SearchRequest<'a, K> {
     /// 注入登录 token。
     ///
     /// 若 token 所属平台与 `.platform(...)` 不一致，`send()` 会返回
-    /// `MusicClientError::AuthTokenPlatformMismatch`。
+    /// [`crate::error::MusicClientError::AuthTokenPlatformMismatch`]。
     pub fn login(mut self, token: impl Into<LoginTokenRef<'a>>) -> Self {
         self.token = Some(token.into());
         self
@@ -159,9 +163,11 @@ impl<'a> SearchRequest<'a, SearchKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword` 为空字符串
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword`
+    ///   为空字符串
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     ///
     /// # Examples
     ///
@@ -204,9 +210,11 @@ impl<'a> SearchRequest<'a, SearchSongKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword` 为空字符串
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword`
+    ///   为空字符串
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<SearchSongResult> {
         let keyword = require_keyword(self.keyword.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
@@ -238,9 +246,11 @@ impl<'a> SearchRequest<'a, SearchArtistKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword` 为空字符串
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword`
+    ///   为空字符串
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<SearchArtistResult> {
         let keyword = require_keyword(self.keyword.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
@@ -272,9 +282,11 @@ impl<'a> SearchRequest<'a, SearchAlbumKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword` 为空字符串
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword`
+    ///   为空字符串
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<SearchAlbumResult> {
         let keyword = require_keyword(self.keyword.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
@@ -306,9 +318,11 @@ impl<'a> SearchRequest<'a, SearchPlaylistKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword` 为空字符串
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::MissingKeyword`] - 未设置 `keyword` 或 `keyword`
+    ///   为空字符串
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<SearchPlaylistResult> {
         let keyword = require_keyword(self.keyword.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;

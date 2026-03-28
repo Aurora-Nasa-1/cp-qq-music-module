@@ -4,10 +4,10 @@ use thiserror::Error;
 /// 音乐客户端统一错误类型。
 ///
 /// 所有公开异步请求都返回该错误类型，调用方可以按错误变体进行分级处理：
-/// - 参数校验错误（如 `MissingKeyword`、`MissingId`）
-/// - 鉴权错误（如 `AuthTokenPlatformMismatch`）
-/// - 平台登录流程错误（如 `TencentMqttLogin`）
-/// - 网络错误（`NetworkError`）
+/// - 参数校验错误（如 [`MusicClientError::MissingKeyword`]、[`MusicClientError::MissingId`]）
+/// - 鉴权错误（如 [`MusicClientError::AuthTokenPlatformMismatch`]）
+/// - 平台登录流程错误（如 [`MusicClientError::TencentMqttLogin`]）
+/// - 网络错误（[`MusicClientError::NetworkError`]）
 #[derive(Error, Debug)]
 pub enum MusicClientError {
     /// 网络请求失败（请求构建、连接、响应解析等底层错误）。
@@ -49,6 +49,9 @@ pub enum MusicClientError {
     /// 网易云登录响应缺少必要 cookie，无法构造登录 token。
     #[error("netease login token cookies missing or invalid")]
     NeteaseLoginTokenInvalid,
+    /// 网易云登录二维码生成失败。
+    #[error("failed to generate netease login qrcode: {0}")]
+    NeteaseLoginQrCode(String),
     /// QQ 音乐登录响应字段缺失或非法。
     #[error("invalid tencent login token response field: `{0}`")]
     InvalidTencentLoginTokenField(&'static str),
@@ -64,5 +67,5 @@ pub enum MusicClientError {
 
 /// 音乐客户端统一结果类型。
 ///
-/// 约定所有公开 API 都返回 `MusicClientResult<T>`。
+/// 约定所有公开 API 都返回 [`MusicClientResult`]。
 pub type MusicClientResult<T> = std::result::Result<T, MusicClientError>;

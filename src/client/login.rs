@@ -83,7 +83,7 @@ impl<'a> LoginSession<'a> {
     /// # 前置条件
     ///
     /// - 需要先通过 [`crate::client::LoginRequest::session`] 创建 [`LoginSession`]。
-    /// - 对于 Tencent 平台，会话内部需要存在 MQTT 上下文。
+    /// - 对于 [`Platform::Tencent`] 平台，会话内部需要存在 MQTT 上下文。
     ///
     /// # Errors
     ///
@@ -134,7 +134,7 @@ impl<'a, K> LoginRequest<'a, K> {
         }
     }
 
-    /// 设置登录平台，默认 `Platform::Netease`。
+    /// 设置登录平台，默认 [`Platform::Netease`]。
     pub fn platform(mut self, platform: Platform) -> Self {
         self.platform = platform;
         self
@@ -164,7 +164,7 @@ impl<'a> LoginRequest<'a, LoginSessionKind> {
     ///
     /// # 前置条件
     ///
-    /// - 可选通过 [`LoginRequest::platform`] 指定平台，不设置时默认 `Platform::Netease`。
+    /// - 可选通过 [`LoginRequest::platform`] 指定平台，不设置时默认 [`Platform::Netease`]。
     ///
     /// # Errors
     ///

@@ -50,6 +50,32 @@ mod section_validation {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    async fn detail_playlist_rejects_non_digit_id() {
+        let client = MusicClient::new();
+        let err = client
+            .detail()
+            .playlist()
+            .id("playlist-id")
+            .send()
+            .await
+            .expect_err("non-digit id should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn detail_toplist_rejects_non_digit_id() {
+        let client = MusicClient::new();
+        let err = client
+            .detail()
+            .toplist()
+            .id("toplist-id")
+            .send()
+            .await
+            .expect_err("non-digit id should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
     async fn detail_song_requires_id() {
         let client = MusicClient::new();
         let err = client.detail().song().send().await.expect_err("missing id should fail");
@@ -114,6 +140,19 @@ mod section_validation {
     async fn playlist_detail_requires_id() {
         let client = MusicClient::new();
         let err = client.playlist().detail().send().await.expect_err("missing id should fail");
+        assert!(matches!(err, MusicClientError::MissingId));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn playlist_detail_rejects_non_digit_id() {
+        let client = MusicClient::new();
+        let err = client
+            .playlist()
+            .detail()
+            .id("abc")
+            .send()
+            .await
+            .expect_err("non-digit id should fail");
         assert!(matches!(err, MusicClientError::MissingId));
     }
 

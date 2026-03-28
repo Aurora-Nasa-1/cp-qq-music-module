@@ -3,7 +3,7 @@
 //! # Overview
 //!
 //! 本模块聚合了所有公开请求构建器，并通过 [`MusicClient`] 暴露统一入口。
-//! 每个业务域都使用类型态（`*Kind`）表达“当前请求阶段”，避免在编译期可规避的错误组合。
+//! 业务术语与类型态约束定义以 crate 级文档 [`crate`] 为准，本模块仅描述入口与导出关系。
 //!
 //! # Quick Start
 //!
@@ -18,7 +18,8 @@
 //!
 //! # Core Concepts
 //!
-//! - 域入口方法：`search/detail/playback/discover/playlist/login`。
+//! - 域入口方法：[`MusicClient::search`]、[`MusicClient::detail`]、[`MusicClient::playback`]、
+//!   [`MusicClient::discover`]、[`MusicClient::playlist`]、[`MusicClient::login`]。
 //! - `*Request<'a, K>`：链式请求构建器。
 //! - `*Kind`：类型态标记，约束不同阶段可调用的方法集合。
 //! - [`LoginTokenRef`][`crate::client::LoginTokenRef`]：跨平台 token 借用包装。
@@ -28,6 +29,7 @@
 //! - 请求失败通过 [`MusicClientError`][`crate::error::MusicClientError`] 返回，不以 panic
 //!   作为业务控制流。
 //! - 参数缺失、平台不匹配与网络错误都可通过错误变体区分。
+//! - 与错误变体语义相关的规范定义见 [`crate::error`]。
 //!
 //! # See Also
 //!
@@ -70,7 +72,7 @@ pub use search::{
 };
 /// 统一 token 借用类型，用于跨平台鉴权参数传递。
 pub use utils::LoginTokenRef;
-/// 统一 ID 输入抽象，支持 `u64` 与字符串。
+/// 统一 ID 输入抽象，支持 [`u64`] 与字符串。
 pub use utils::MusicIdInput;
 
 #[cfg(test)]

@@ -49,18 +49,13 @@ cargo +nightly fmt
 # 静态检查
 cargo clippy --all-targets --all-features -- -D warnings
 
-# 测试（默认不运行 ignore 的在线用例）
+# 测试
 cargo test
 
-# 运行包含在线依赖的测试（需要显式启用）
-cargo test -- --ignored
 ```
 
 ## 5. 测试策略
 
-- `src/client/tests.rs` 中包含两类测试：
-  - 离线/本地可稳定运行的校验测试（默认执行）
-  - 依赖线上接口或人工扫码流程的测试（`#[ignore]`）
 - 新增功能时至少补充一项：
   - 参数校验测试，或
   - 平台 token 约束测试，或
@@ -82,7 +77,6 @@ cargo test -- --ignored
 - 代码可编译：`cargo check`
 - 已格式化：`cargo +nightly fmt`
 - 本地测试通过：`cargo test`
-- 若改动在线链路：说明是否执行过 `cargo test -- --ignored`
 - 无无关文件改动（特别是 `target/`、IDE 临时文件）
 
 ## 8. Git Commit 信息格式
@@ -109,7 +103,7 @@ cargo test -- --ignored
 ```text
 fix(release): need to depend on latest rxjs and zone.js
 
-The version in our package.json gets copied to the one we publish, 
+The version in our package.json gets copied to the one we publish,
 and users need the latest of these.
 ```
 

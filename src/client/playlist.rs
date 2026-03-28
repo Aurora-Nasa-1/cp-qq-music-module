@@ -3,7 +3,7 @@
 //! # Overview
 //!
 //! 该模块提供歌单详情、歌单分类和分类歌单列表三类能力。
-//! 若需要鉴权能力，可在请求上通过 `.login(...)` 注入对应平台 token。
+//! 若需要鉴权能力，可通过 [`PlaylistRequest::login`] 注入对应平台 token。
 //!
 //! # Quick Start
 //!
@@ -18,7 +18,9 @@
 
 use std::marker::PhantomData;
 
-use super::utils::{netease_token, require_category, tencent_token, validate_auth_platform};
+use super::utils::{
+    MusicIdInput, netease_token, require_category, tencent_token, validate_auth_platform,
+};
 use super::{LoginTokenRef, MusicClient};
 use crate::error::{MusicClientError, MusicClientResult};
 use crate::models::{Platform, PlaylistCategoriesResult, PlaylistDetailResult, PlaylistListResult};
@@ -43,11 +45,11 @@ pub struct PlaylistListKind;
 ///
 /// `K` 为类型态参数，用于限制当前子能力。
 ///
-/// 歌单列表子能力默认分页参数为 `offset = 0`、`limit = 20`。
+/// 歌单列表子能力默认分页参数由内部常量维护。
 pub struct PlaylistRequest<'a, K> {
     client: &'a MusicClient,
     keyword: Option<String>,
-    id: Option<u64>,
+    id: Option<MusicClientResult<u64>>,
     category: Option<String>,
     offset: u64,
     limit: u64,
@@ -74,7 +76,7 @@ impl<'a, K> PlaylistRequest<'a, K> {
         }
     }
 
-    /// 设置请求平台，默认 `Platform::Netease`。
+    /// 设置请求平台，默认 [`Platform::Netease`]。
     pub fn platform(mut self, platform: Platform) -> Self {
         self.platform = platform;
         self
@@ -83,7 +85,7 @@ impl<'a, K> PlaylistRequest<'a, K> {
     /// 注入登录 token。
     ///
     /// 若 token 所属平台与 `.platform(...)` 不一致，`send()` 会返回
-    /// `MusicClientError::AuthTokenPlatformMismatch`。
+    /// [`MusicClientError::AuthTokenPlatformMismatch`]。
     pub fn login(mut self, token: impl Into<LoginTokenRef<'a>>) -> Self {
         self.token = Some(token.into());
         self
@@ -122,9 +124,9 @@ impl<'a> PlaylistRequest<'a, PlaylistKind> {
 }
 
 impl<'a> PlaylistRequest<'a, PlaylistDetailKind> {
-    /// 设置歌单 ID（数值，必填）。
-    pub fn id(mut self, id: u64) -> Self {
-        self.id = Some(id);
+    /// 设置歌单 ID（支持 [`MusicIdInput`]，必填）。
+    pub fn id(mut self, id: impl MusicIdInput) -> Self {
+        self.id = Some(id.try_into_id_u64());
         self
     }
 
@@ -138,11 +140,11 @@ impl<'a> PlaylistRequest<'a, PlaylistDetailKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingId`] - 未设置歌单 `id`
+    /// - [`MusicClientError::MissingId`] - 未设置歌单 `id`，或 `id` 不是纯数字
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<PlaylistDetailResult> {
-        let id = self.id.ok_or(MusicClientError::MissingId)?;
+        let id = self.id.transpose()?.ok_or(MusicClientError::MissingId)?;
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
             Platform::Netease => {
@@ -187,13 +189,15 @@ impl<'a> PlaylistRequest<'a, PlaylistListKind> {
         self
     }
 
-    /// 设置分页偏移量，默认 `0`。
+    #[allow(rustdoc::private_intra_doc_links)]
+    /// 设置分页偏移量，默认值见 [`Self::DEFAULT_OFFSET`]。
     pub fn offset(mut self, offset: u64) -> Self {
         self.offset = offset;
         self
     }
 
-    /// 设置分页大小，默认 `20`。
+    #[allow(rustdoc::private_intra_doc_links)]
+    /// 设置分页大小，默认值见 [`Self::DEFAULT_LIMIT`]。
     pub fn limit(mut self, limit: u64) -> Self {
         self.limit = limit;
         self

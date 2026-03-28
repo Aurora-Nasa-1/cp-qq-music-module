@@ -1,4 +1,10 @@
+//! QQ 音乐 API 请求实现。
+//!
+//! 该模块负责组装 QQ 音乐网关请求、注入可选登录态，并把平台响应转换为
+//! [`crate::models`] 中的统一返回模型。
+
 use std::sync::LazyLock;
+use std::time::Duration;
 
 use reqwest::Client;
 use serde_json::{Value, json};
@@ -10,6 +16,7 @@ use crate::error::{MusicClientError, MusicClientResult};
 use crate::models::*;
 
 const TENCENT_API_URL: &str = "https://u.y.qq.com/cgi-bin/musics.fcg";
+const HTTP_TIMEOUT: Duration = Duration::from_secs(15);
 static TENCENT_GUID: LazyLock<String> = LazyLock::new(utils::get_guid);
 
 pub(crate) struct TencentClient {
@@ -17,10 +24,13 @@ pub(crate) struct TencentClient {
 }
 
 impl TencentClient {
+    /// 创建 QQ 音乐请求客户端。
     pub(crate) fn new() -> Self {
         Self {
             client: Client::builder()
                 .no_proxy()
+                .timeout(HTTP_TIMEOUT)
+                .connect_timeout(HTTP_TIMEOUT)
                 .user_agent(
                     "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)",
                 )

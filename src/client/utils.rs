@@ -3,15 +3,22 @@ use crate::models::{NeteaseLoginToken, Platform, TencentLoginToken};
 
 /// 音乐资源 ID 输入抽象。
 ///
-/// 用于让请求构建器在单个 `id(...)` 方法中同时支持 `u64` 与字符串输入。
+/// 用于让请求构建器在单个 `id(...)` 方法中同时支持 [`u64`] 与字符串输入（[`String`]、[`str`]）。
 pub trait MusicIdInput {
     /// 转为请求内部统一使用的字符串 ID。
     fn into_id_string(self) -> String;
+
+    /// 尝试将输入转换为纯数字 [`u64`] ID。
+    fn try_into_id_u64(self) -> MusicClientResult<u64>;
 }
 
 impl MusicIdInput for u64 {
     fn into_id_string(self) -> String {
         self.to_string()
+    }
+
+    fn try_into_id_u64(self) -> MusicClientResult<u64> {
+        Ok(self)
     }
 }
 
@@ -19,17 +26,29 @@ impl MusicIdInput for String {
     fn into_id_string(self) -> String {
         self
     }
+
+    fn try_into_id_u64(self) -> MusicClientResult<u64> {
+        parse_digit_u64(self.as_str())
+    }
 }
 
 impl MusicIdInput for &str {
     fn into_id_string(self) -> String {
         self.to_owned()
     }
+
+    fn try_into_id_u64(self) -> MusicClientResult<u64> {
+        parse_digit_u64(self)
+    }
 }
 
 impl MusicIdInput for &String {
     fn into_id_string(self) -> String {
         self.clone()
+    }
+
+    fn try_into_id_u64(self) -> MusicClientResult<u64> {
+        parse_digit_u64(self.as_str())
     }
 }
 
@@ -116,17 +135,12 @@ pub(crate) fn require_id(id: Option<&str>) -> MusicClientResult<&str> {
     }
 }
 
-pub(crate) fn require_digit_str(id: Option<&str>) -> MusicClientResult<u64> {
-    match id {
-        Some(id) => {
-            let digit_str = id.trim();
-            if digit_str.is_empty() || !digit_str.bytes().all(|byte| byte.is_ascii_digit()) {
-                return Err(MusicClientError::MissingId);
-            }
-            digit_str.parse::<u64>().map_err(|_| MusicClientError::MissingId)
-        }
-        _ => Err(MusicClientError::MissingId),
+fn parse_digit_u64(id: &str) -> MusicClientResult<u64> {
+    let digit_str = id.trim();
+    if digit_str.is_empty() || !digit_str.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(MusicClientError::MissingId);
     }
+    digit_str.parse::<u64>().map_err(|_| MusicClientError::MissingId)
 }
 
 pub(crate) fn require_category(category: Option<&str>) -> MusicClientResult<&str> {
@@ -141,14 +155,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn require_digit_str_accepts_trimmed_digits() {
-        let id = require_digit_str(Some("  12345  ")).expect("digits should be accepted");
-        assert_eq!(id, 12345);
+    fn music_id_input_try_into_id_u64_accepts_u64_without_parse() {
+        let id = 123_u64.try_into_id_u64().expect("u64 input should be accepted as-is");
+        assert_eq!(id, 123);
     }
 
     #[test]
-    fn require_digit_str_rejects_non_digit_input() {
-        let err = require_digit_str(Some("12ab")).expect_err("non-digit string should be rejected");
+    fn music_id_input_try_into_id_u64_accepts_digit_str() {
+        let id = "  456  ".try_into_id_u64().expect("digit string input should be accepted");
+        assert_eq!(id, 456);
+    }
+
+    #[test]
+    fn music_id_input_try_into_id_u64_rejects_non_digit_str() {
+        let err = "45a".try_into_id_u64().expect_err("non-digit string should be rejected");
         assert!(matches!(err, MusicClientError::MissingId));
     }
 }

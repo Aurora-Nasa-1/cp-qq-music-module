@@ -61,7 +61,7 @@ impl<'a, K> PlaybackRequest<'a, K> {
         }
     }
 
-    /// 设置请求平台，默认 `Platform::Netease`。
+    /// 设置请求平台，默认 [`Platform::Netease`]。
     pub fn platform(mut self, platform: Platform) -> Self {
         self.platform = platform;
         self
@@ -70,7 +70,7 @@ impl<'a, K> PlaybackRequest<'a, K> {
     /// 注入登录 token。
     ///
     /// 若 token 所属平台与 `.platform(...)` 不一致，`send()` 会返回
-    /// `MusicClientError::AuthTokenPlatformMismatch`。
+    /// [`crate::error::MusicClientError::AuthTokenPlatformMismatch`]。
     pub fn login(mut self, token: impl Into<LoginTokenRef<'a>>) -> Self {
         self.token = Some(token.into());
         self
@@ -101,7 +101,7 @@ impl<'a> PlaybackRequest<'a, PlaybackKind> {
 }
 
 impl<'a> PlaybackRequest<'a, PlaybackLyricKind> {
-    /// 设置歌曲 ID（支持 `u64` 或字符串，必填且不能为空）。
+    /// 设置歌曲 ID（支持 [`MusicIdInput`]，必填且不能为空）。
     pub fn id(mut self, id: impl MusicIdInput) -> Self {
         self.id = Some(id.into_id_string());
         self
@@ -117,9 +117,10 @@ impl<'a> PlaybackRequest<'a, PlaybackLyricKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingId`] - 未设置歌曲 `id` 或 `id` 为空字符串
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::MissingId`] - 未设置歌曲 `id` 或 `id` 为空字符串
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<LyricResult> {
         let id = require_id(self.id.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
@@ -131,13 +132,13 @@ impl<'a> PlaybackRequest<'a, PlaybackLyricKind> {
 }
 
 impl<'a> PlaybackRequest<'a, PlaybackUrlKind> {
-    /// 设置歌曲 ID（支持 `u64` 或字符串，必填且不能为空）。
+    /// 设置歌曲 ID（支持 [`MusicIdInput`]，必填且不能为空）。
     pub fn id(mut self, id: impl MusicIdInput) -> Self {
         self.id = Some(id.into_id_string());
         self
     }
 
-    /// 设置音质等级，默认 `SongQuality::Standard`。
+    /// 设置音质等级，默认 [`SongQuality::Standard`]。
     pub fn level(mut self, level: SongQuality) -> Self {
         self.level = level;
         self
@@ -148,15 +149,16 @@ impl<'a> PlaybackRequest<'a, PlaybackUrlKind> {
     /// # 前置条件
     ///
     /// - 需要先通过 [`Self::id`] 设置歌曲 ID。
-    /// - 可选通过 [`Self::level`] 指定音质；默认是 `SongQuality::Standard`。
+    /// - 可选通过 [`Self::level`] 指定音质；默认是 [`SongQuality::Standard`]。
     /// - 若调用过 [`PlaybackRequest::login`]，其 token 所属平台必须与 [`PlaybackRequest::platform`]
     ///   一致。
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingId`] - 未设置歌曲 `id` 或 `id` 为空字符串
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::MissingId`] - 未设置歌曲 `id` 或 `id` 为空字符串
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<UrlResult> {
         let id = require_id(self.id.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;

@@ -3,7 +3,7 @@
 //! # Overview
 //!
 //! 该模块覆盖发现页相关能力：热词、推荐歌单、榜单列表、歌单分类、分类歌单列表。
-//! 默认平台为 `Netease`，可通过 `.platform(...)` 切换。
+//! 默认平台为 [`Platform::Netease`]，可通过 [`DiscoverRequest::platform`] 切换。
 //!
 //! # Quick Start
 //!
@@ -60,7 +60,7 @@ pub struct DiscoverPlaylistListKind;
 ///
 /// `K` 为类型态参数，用于限制当前子能力。
 ///
-/// 歌单列表子能力默认分页参数为 `offset = 0`、`limit = 20`。
+/// 歌单列表子能力默认分页参数由内部常量维护。
 pub struct DiscoverRequest<'a, K> {
     client: &'a MusicClient,
     category: Option<String>,
@@ -89,7 +89,7 @@ impl<'a, K> DiscoverRequest<'a, K> {
         }
     }
 
-    /// 设置请求平台，默认 `Platform::Netease`。
+    /// 设置请求平台，默认 [`Platform::Netease`]。
     pub fn platform(mut self, platform: Platform) -> Self {
         self.platform = platform;
         self
@@ -98,7 +98,7 @@ impl<'a, K> DiscoverRequest<'a, K> {
     /// 注入登录 token。
     ///
     /// 若 token 所属平台与 `.platform(...)` 不一致，`send()` 会返回
-    /// `MusicClientError::AuthTokenPlatformMismatch`。
+    /// [`crate::error::MusicClientError::AuthTokenPlatformMismatch`]。
     pub fn login(mut self, token: impl Into<LoginTokenRef<'a>>) -> Self {
         self.token = Some(token.into());
         self
@@ -119,7 +119,7 @@ impl<'a> DiscoverRequest<'a, DiscoverKind> {
         }
     }
 
-    /// 切换为搜索推荐请求。
+    /// 切换为搜索建议请求。
     pub fn suggests(self) -> DiscoverRequest<'a, DiscoverSearchSuggestsKind> {
         self.into_kind()
     }
@@ -166,8 +166,9 @@ impl<'a> DiscoverRequest<'a, DiscoverSearchSuggestsKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<SearchSuggestResult> {
         let keyword = require_keyword(self.keyword.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;
@@ -192,8 +193,9 @@ impl<'a> DiscoverRequest<'a, DiscoverHotkeyKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<HotkeyResult> {
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
@@ -213,8 +215,9 @@ impl<'a> DiscoverRequest<'a, DiscoverRecommendPlaylistKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<RecommendPlaylistResult> {
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
@@ -238,8 +241,9 @@ impl<'a> DiscoverRequest<'a, DiscoverToplistListKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<ToplistListResult> {
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
@@ -259,8 +263,9 @@ impl<'a> DiscoverRequest<'a, DiscoverPlaylistCategoriesKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<PlaylistCategoriesResult> {
         validate_auth_platform(self.platform, self.token)?;
         match self.platform {
@@ -281,13 +286,15 @@ impl<'a> DiscoverRequest<'a, DiscoverPlaylistListKind> {
         self
     }
 
-    /// 设置分页偏移量，默认 `0`。
+    #[allow(rustdoc::private_intra_doc_links)]
+    /// 设置分页偏移量，默认值见 [`Self::DEFAULT_OFFSET`]。
     pub fn offset(mut self, offset: u64) -> Self {
         self.offset = offset;
         self
     }
 
-    /// 设置分页大小，默认 `20`。
+    #[allow(rustdoc::private_intra_doc_links)]
+    /// 设置分页大小，默认值见 [`Self::DEFAULT_LIMIT`]。
     pub fn limit(mut self, limit: u64) -> Self {
         self.limit = limit;
         self
@@ -304,9 +311,11 @@ impl<'a> DiscoverRequest<'a, DiscoverPlaylistListKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingCategory`] - 未设置 `category` 或 `category` 为空字符串
-    /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
-    /// - [`MusicClientError::NetworkError`] - 网络请求失败
+    /// - [`crate::error::MusicClientError::MissingCategory`] - 未设置 `category` 或 `category`
+    ///   为空字符串
+    /// - [`crate::error::MusicClientError::AuthTokenPlatformMismatch`] - token
+    ///   所属平台与请求平台不匹配
+    /// - [`crate::error::MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<PlaylistListResult> {
         let category = require_category(self.category.as_deref())?;
         validate_auth_platform(self.platform, self.token)?;

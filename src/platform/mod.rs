@@ -1,9 +1,23 @@
+//! 平台实现层。
+//!
+//! # Overview
+//!
+//! 本模块承载 [`crate::client::MusicClient`] 的平台侧实现细节，不作为公开 API 暴露。
+//! 统一模型与错误语义以 [`crate::models`] 与 [`crate::error`] 为准。
+//!
+//! # Core Concepts
+//!
+//! - [`NeteaseClient`]：网易云平台请求实现。
+//! - [`TencentClient`]：QQ 音乐平台请求实现。
+//! - [`TencentMqttLoginSession`]：QQ 扫码登录使用的 MQTT 会话状态。
+
 pub(crate) mod netease;
 mod tencent;
 
 pub(crate) use netease::NeteaseClient;
 pub(crate) use tencent::{TencentClient, TencentMqttLoginSession};
 
+/// 将平台原始模型集合转换为统一模型集合。
 fn collect_into<T, U>(values: Vec<T>) -> Vec<U>
 where
     T: Into<U>,
@@ -11,6 +25,7 @@ where
     values.into_iter().map(Into::into).collect()
 }
 
+/// 解析单个 LRC 时间标签并标准化到毫秒精度。
 fn parse_lrc_timestamp_tag(segment: &str) -> Option<(usize, String)> {
     if !segment.starts_with('[') {
         return None;
@@ -43,6 +58,7 @@ fn parse_lrc_timestamp_tag(segment: &str) -> Option<(usize, String)> {
     Some((end + 1, format!("[{minute}:{second}.{millisecond}]")))
 }
 
+/// 规范化单行 LRC，只保留合法时间标签前缀并原样拼接歌词正文。
 fn normalize_lrc_line(line: &str) -> Option<String> {
     let line = line.trim_start_matches('\u{feff}');
     let mut cursor = 0;
@@ -58,6 +74,7 @@ fn normalize_lrc_line(line: &str) -> Option<String> {
     Some(normalized)
 }
 
+/// 规范化带时间戳歌词，仅保留包含有效时间标签的行。
 fn normalize_timestamp_lyric(raw: String) -> String {
     raw.lines().filter_map(normalize_lrc_line).collect::<Vec<_>>().join("\n")
 }
