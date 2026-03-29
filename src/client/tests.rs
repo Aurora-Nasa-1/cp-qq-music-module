@@ -467,15 +467,15 @@ mod section_live_smoke {
         let response = client
             .detail()
             .playlist()
-            .id(8814710412)
+            .id(2098357962)
             .platform(Platform::Netease)
             .send()
             .await
             .expect("detail should succeed");
-        assert_eq!(response.songs[0].id, "1392942840");
-        assert_eq!(response.songs[0].name, "烟雨行舟 (新版)");
-        assert_eq!(response.name, "烟雨江南 | 你一句春不晚 我到了真江南");
-        assert!(response.description.starts_with("恬静而淡雅"));
+        assert_eq!(response.songs[0].id, "25642214");
+        assert_eq!(response.songs[0].name, "爱错(Live)");
+        assert_eq!(response.name, "失败总是贯穿人生");
+        assert!(response.description.starts_with("相逢如骤雨初晴"));
         assert!(!response.pic_url.is_empty())
     }
 

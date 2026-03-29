@@ -308,7 +308,7 @@ struct NTrackId {
 
 impl NPlaylistDetailResponse {
     pub(super) fn song_ids(&self) -> Vec<String> {
-        self.playlist.track_ids.iter().map(|item| item.id.to_string()).collect()
+        self.playlist.track_ids.iter().take(1000).map(|item| item.id.to_string()).collect()
     }
 
     pub(super) fn into_with_songs(self, songs: Vec<Song>) -> PlaylistDetailResult {
