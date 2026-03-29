@@ -569,12 +569,12 @@ mod section_live_smoke {
         let response = client
             .playback()
             .lyric()
-            .id("108914")
+            .id("3362722900")
             .platform(Platform::Netease)
             .send()
             .await
             .expect("playback should succeed");
-        assert!(response.lyric.starts_with("[00:37.010] 风到这里就是粘"));
+        assert!(response.lyric.starts_with("[00:05.000]纯音乐，请欣赏"));
     }
 
     #[tokio::test(flavor = "current_thread")]

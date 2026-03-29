@@ -338,7 +338,7 @@ impl NSongDetailResponse {
 #[derive(Deserialize)]
 pub(super) struct NLyricResponse {
     lrc: NLyricData,
-    tlyric: NLyricData,
+    tlyric: Option<NLyricData>,
 }
 
 #[derive(Deserialize)]
@@ -349,7 +349,9 @@ struct NLyricData {
 impl NLyricResponse {
     pub(super) fn into_with(self, id: &str) -> LyricResult {
         let lyric = super::super::normalize_timestamp_lyric(self.lrc.lyric);
-        let trans_lyric = super::super::normalize_timestamp_lyric(self.tlyric.lyric);
+        let trans_lyric = super::super::normalize_timestamp_lyric(
+            self.tlyric.map_or("".to_string(), |item| item.lyric),
+        );
         LyricResult {
             id: id.to_string(),
             lyric,
