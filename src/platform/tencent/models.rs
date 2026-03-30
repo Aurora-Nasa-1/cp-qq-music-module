@@ -936,12 +936,6 @@ impl TLoginInfoResponse {
         if data.musickey.trim().is_empty() {
             return Err(MusicClientError::InvalidTencentLoginTokenField("musickey"));
         }
-        if data.refresh_token.trim().is_empty() {
-            return Err(MusicClientError::InvalidTencentLoginTokenField("refresh_token"));
-        }
-        if data.refresh_key.trim().is_empty() {
-            return Err(MusicClientError::InvalidTencentLoginTokenField("refresh_key"));
-        }
 
         let expires_at = if data.expired_at > 0 {
             Some(data.expired_at)
