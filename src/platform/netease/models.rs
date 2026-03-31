@@ -370,7 +370,7 @@ pub(super) struct NUrlResponse {
 struct NUrlData {
     id: u64,
     url: Option<String>,
-    level: Option<SongQuality>,
+    level: Option<String>,
 }
 
 impl From<NUrlResponse> for UrlResult {
@@ -379,7 +379,14 @@ impl From<NUrlResponse> for UrlResult {
             Some(item) => UrlResult {
                 id: item.id.to_string(),
                 url: item.url.unwrap_or_default(),
-                level: item.level.unwrap_or(SongQuality::Standard),
+                level: match item.level.as_deref() {
+                    Some("jymaster") => SongQuality::Master,
+                    Some("sky") => SongQuality::Surround,
+                    Some("hires") => SongQuality::Hires,
+                    Some("jyeffect") | Some("lossless") => SongQuality::Lossless,
+                    Some("exhigh") => SongQuality::Exhigh,
+                    Some("standard") | Some(_) | None => SongQuality::Standard,
+                },
             },
             None => {
                 UrlResult { id: 0.to_string(), url: String::new(), level: SongQuality::Standard }

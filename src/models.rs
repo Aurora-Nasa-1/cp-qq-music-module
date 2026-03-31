@@ -338,17 +338,11 @@ pub(crate) struct LoginQrResult {
 ///
 /// 该枚举会被序列化为平台可识别的字符串值；不同平台对高阶音质支持程度可能不同。
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-#[serde(rename_all = "snake_case")]
 pub enum SongQuality {
     /// 超清母带.
-    #[serde(rename = "jymaster")]
     Master,
-    /// 沉浸环绕声.
-    #[serde(rename = "sky")]
+    /// 全景声.
     Surround,
-    /// 高清臻音.
-    #[serde(rename = "jyeffect")]
-    Spatial,
     /// Hi-Res.
     Hires,
     /// 无损.

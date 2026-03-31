@@ -410,24 +410,15 @@ impl TencentClient {
         let mut filename = match level {
             SongQuality::Master => vec![
                 format!("AI00{id}{id}.flac"),
-                format!("Q000{id}{id}.flac"),
                 format!("Q001{id}{id}.flac"),
-                format!("RS01{id}{id}.flac"),
+                format!("Q000{id}{id}.flac"),
                 format!("F000{id}{id}.flac"),
                 format!("M800{id}{id}.mp3"),
                 format!("M500{id}{id}.mp3"),
             ],
             SongQuality::Surround => vec![
+                format!("Q001{id}{id}.flac"),
                 format!("Q000{id}{id}.flac"),
-                format!("Q001{id}{id}.flac"),
-                format!("RS01{id}{id}.flac"),
-                format!("F000{id}{id}.flac"),
-                format!("M800{id}{id}.mp3"),
-                format!("M500{id}{id}.mp3"),
-            ],
-            SongQuality::Spatial => vec![
-                format!("Q001{id}{id}.flac"),
-                format!("RS01{id}{id}.flac"),
                 format!("F000{id}{id}.flac"),
                 format!("M800{id}{id}.mp3"),
                 format!("M500{id}{id}.mp3"),
