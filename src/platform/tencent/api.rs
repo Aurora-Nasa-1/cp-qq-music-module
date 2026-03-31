@@ -6,7 +6,7 @@
 use std::sync::LazyLock;
 use std::time::Duration;
 
-use reqwest::Client;
+use reqwest::{Client, header::COOKIE};
 use serde_json::{Value, json};
 
 use super::models::*;
@@ -79,6 +79,7 @@ impl TencentClient {
         self.client
             .post(TENCENT_API_URL)
             .query(&[("sign", sign.as_str())])
+            .header(COOKIE, token.map(|v| v.to_cookie()).unwrap_or_default())
             .json(&body)
             .send()
             .await?
@@ -452,10 +453,12 @@ impl TencentClient {
                     "method": "UrlGetVkey",
                     "module": "music.vkey.GetVkey",
                     "param": {
+                      "uin": token.map(|v| v.music_id.to_string()).unwrap_or_default(),
                       "filename": filename,
                       "guid": TENCENT_GUID.as_str(),
                       "songmid": songmid,
-                      "songtype": songtype
+                      "songtype": songtype,
+                      "ctx": 0
                     }
                   }
                 }),

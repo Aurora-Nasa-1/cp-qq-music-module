@@ -475,4 +475,11 @@ impl TencentLoginToken {
     pub fn expires_at(&self) -> Option<i64> {
         self.expires_at
     }
+
+    pub fn to_cookie(&self) -> String {
+        format!(
+            "uin={}; qqmusic_key={}; qm_keyst={}; tmeLoginType={}",
+            self.music_id, self.music_key, self.music_key, self.login_type,
+        )
+    }
 }
