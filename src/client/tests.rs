@@ -759,3 +759,136 @@ mod section_live_smoke {
         assert!(response.suggests[0].starts_with("周杰伦"));
     }
 }
+
+mod section_live_level_url_with_env_login {
+    use std::env;
+
+    use super::*;
+    use crate::models::{NeteaseLoginToken, TencentLoginToken};
+
+    fn load_dotenv() {
+        let _ = dotenvy::dotenv();
+    }
+
+    fn required_env(name: &str) -> String {
+        env::var(name).unwrap_or_else(|_| {
+            panic!("missing env `{name}` in .env");
+        })
+    }
+
+    fn env_with_default(name: &str, default_value: &str) -> String {
+        match env::var(name) {
+            Ok(value) if !value.trim().is_empty() => value,
+            _ => default_value.to_owned(),
+        }
+    }
+
+    fn optional_i64_env(name: &str) -> Option<i64> {
+        match env::var(name) {
+            Ok(raw) if !raw.trim().is_empty() => Some(raw.parse::<i64>().unwrap_or_else(|_| {
+                panic!("env `{name}` should be i64, got `{raw}`");
+            })),
+            _ => None,
+        }
+    }
+
+    fn required_u64_env(name: &str) -> u64 {
+        let raw = required_env(name);
+        raw.parse::<u64>().unwrap_or_else(|_| panic!("env `{name}` should be u64, got `{raw}`"))
+    }
+
+    fn netease_token_from_env() -> NeteaseLoginToken {
+        NeteaseLoginToken::new(
+            required_env("NETEASE_MUSIC_U"),
+            required_env("NETEASE_MUSIC_R_U"),
+            required_env("NETEASE_CSRF"),
+            optional_i64_env("NETEASE_EXPIRES_AT"),
+        )
+    }
+
+    fn tencent_token_from_env() -> TencentLoginToken {
+        TencentLoginToken::new(
+            required_u64_env("TENCENT_MUSIC_ID"),
+            required_env("TENCENT_MUSIC_KEY"),
+            required_env("TENCENT_REFRESH_TOKEN"),
+            required_env("TENCENT_REFRESH_KEY"),
+            optional_i64_env("TENCENT_EXPIRES_AT"),
+            required_u64_env("TENCENT_LOGIN_TYPE"),
+        )
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires .env credentials and live network"]
+    async fn netease_playback_url_accepts_multiple_levels_with_env_login() {
+        load_dotenv();
+        let client = MusicClient::new();
+        let token = netease_token_from_env();
+        let song_id = env_with_default("NETEASE_TEST_SONG_ID", "1859245776");
+        let levels = [
+            SongQuality::Standard,
+            SongQuality::Exhigh,
+            SongQuality::Lossless,
+            SongQuality::Hires,
+            SongQuality::Surround,
+            SongQuality::Master,
+        ];
+
+        for level in levels {
+            let response = client
+                .playback()
+                .url()
+                .id(song_id.as_str())
+                .level(level.clone())
+                .platform(Platform::Netease)
+                .login(&token)
+                .send()
+                .await
+                .unwrap_or_else(|error| panic!("netease level {level:?} request failed: {error}"));
+            let parsed = reqwest::Url::parse(&response.url)
+                .unwrap_or_else(|_| panic!("netease level {level:?} returned invalid url"));
+            let host = parsed
+                .host_str()
+                .unwrap_or_else(|| panic!("netease level {level:?} returned url without host"));
+            assert!(host.ends_with(".music.126.net"), "unexpected netease host: {host}");
+            assert_eq!(response.level, level, "unexpected level for netease level {level:?}");
+            assert_eq!(response.id, song_id, "unexpected id for netease level {level:?}");
+        }
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires .env credentials and live network"]
+    async fn tencent_playback_url_accepts_multiple_levels_with_env_login() {
+        load_dotenv();
+        let client = MusicClient::new();
+        let token = tencent_token_from_env();
+        let song_id = env_with_default("TENCENT_TEST_SONG_ID", "004Gq0xE1YC8xp");
+        let levels = [
+            SongQuality::Standard,
+            SongQuality::Exhigh,
+            SongQuality::Lossless,
+            SongQuality::Hires,
+            SongQuality::Surround,
+            SongQuality::Master,
+        ];
+
+        for level in levels {
+            let response = client
+                .playback()
+                .url()
+                .id(song_id.as_str())
+                .level(level.clone())
+                .platform(Platform::Tencent)
+                .login(&token)
+                .send()
+                .await
+                .unwrap_or_else(|error| panic!("tencent level {level:?} request failed: {error}"));
+            let parsed = reqwest::Url::parse(&response.url)
+                .unwrap_or_else(|_| panic!("tencent level {level:?} returned invalid url"));
+            let host = parsed
+                .host_str()
+                .unwrap_or_else(|| panic!("tencent level {level:?} returned url without host"));
+            assert!(host.ends_with("qqmusic.qq.com"), "unexpected tencent host: {host}");
+            assert_eq!(response.id, song_id, "unexpected id for tencent level {level:?}");
+        }
+    }
+}

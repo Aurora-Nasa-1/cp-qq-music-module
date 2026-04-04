@@ -36,7 +36,7 @@ const EAPI_COOKIE_SUFFIX: &str =
      osver=Microsoft-Windows-10-Professional-build-19045-64bit; \
      clientSign=18:C0:4D:B9:8F:FE@@@\
      453832335F384641365F424635335F303030315F303031425F343434415F343643365F333638332@@@@@@\
-     6ff673ef74955b38bce2fa8562d95c976ed4758b1227c4e9ee345987cee17bc9";
+     6ff673ef74955b38bce2fa8562d95c976ed4758b1227c4e9ee345987cee17bc9; channel=netease";
 const HTTP_TIMEOUT: Duration = Duration::from_secs(15);
 
 pub(crate) struct NeteaseClient {
@@ -306,7 +306,14 @@ impl NeteaseClient {
                 "/api/song/enhance/player/url/v1",
                 json!({
                     "ids": ids,
-                    "level": level,
+                    "level": match level {
+                        SongQuality::Master => "jymaster",
+                        SongQuality::Surround => "sky",
+                        SongQuality::Hires => "hires",
+                        SongQuality::Lossless => "lossless",
+                        SongQuality::Exhigh => "exhigh",
+                        SongQuality::Standard => "standard",
+                    },
                     "immerseType": match level {
                     SongQuality::Surround => "ste",
                     _ => "c51"

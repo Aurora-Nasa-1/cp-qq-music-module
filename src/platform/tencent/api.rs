@@ -6,7 +6,8 @@
 use std::sync::LazyLock;
 use std::time::Duration;
 
-use reqwest::{Client, header::COOKIE};
+use reqwest::Client;
+use reqwest::header::COOKIE;
 use serde_json::{Value, json};
 
 use super::models::*;
