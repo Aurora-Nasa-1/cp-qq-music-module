@@ -13,12 +13,6 @@ pub enum MusicClientError {
     /// 网络请求失败（请求构建、连接、响应解析等底层错误）。
     #[error("failed to connect to server")]
     NetworkError(#[from] reqwest::Error),
-    /// 平台返回 JSON 解析失败，携带接口和响应片段用于排查。
-    #[error(
-        "failed to deserialize response from `{endpoint}`: {reason}; response preview: \
-         {response_preview}"
-    )]
-    ResponseDeserialize { endpoint: String, reason: String, response_preview: String },
     /// 搜索请求缺少关键词。
     #[error("missing required search keyword")]
     MissingKeyword,
