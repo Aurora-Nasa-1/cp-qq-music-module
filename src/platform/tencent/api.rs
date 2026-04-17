@@ -424,6 +424,12 @@ impl TencentClient {
                 format!("M800{id}{id}.mp3"),
                 format!("M500{id}{id}.mp3"),
             ],
+            SongQuality::Stereo => vec![
+                format!("Q000{id}{id}.flac"),
+                format!("F000{id}{id}.flac"),
+                format!("M800{id}{id}.mp3"),
+                format!("M500{id}{id}.mp3"),
+            ],
             SongQuality::Hires | SongQuality::Lossless => vec![
                 format!("F000{id}{id}.flac"),
                 format!("M800{id}{id}.mp3"),

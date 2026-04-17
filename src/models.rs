@@ -343,6 +343,8 @@ pub enum SongQuality {
     Master,
     /// 全景声.
     Surround,
+    /// 立体声.
+    Stereo,
     /// Hi-Res.
     Hires,
     /// 无损.

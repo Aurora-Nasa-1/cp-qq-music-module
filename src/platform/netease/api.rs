@@ -31,8 +31,7 @@ static EAPI_HEADER_JSON: LazyLock<String> = LazyLock::new(|| {
     .to_string()
 });
 
-const EAPI_COOKIE_SUFFIX: &str =
-    "os=pc; appver=3.1.17.204416; deviceId=121F1C01530F5AF886E1F0A37F597AE2C460EEBDB025AA7649CC; \
+const EAPI_COOKIE_SUFFIX: &str = "os=pc; appver=3.1.17.204416; deviceId=121F1C01530F5AF886E1F0A37F597AE2C460EEBDB025AA7649CC; \
      osver=Microsoft-Windows-10-Professional-build-19045-64bit; \
      clientSign=18:C0:4D:B9:8F:FE@@@\
      453832335F384641365F424635335F303030315F303031425F343434415F343643365F333638332@@@@@@\
@@ -309,6 +308,7 @@ impl NeteaseClient {
                     "level": match level {
                         SongQuality::Master => "jymaster",
                         SongQuality::Surround => "sky",
+                        SongQuality::Stereo => "jyeffect",
                         SongQuality::Hires => "hires",
                         SongQuality::Lossless => "lossless",
                         SongQuality::Exhigh => "exhigh",
