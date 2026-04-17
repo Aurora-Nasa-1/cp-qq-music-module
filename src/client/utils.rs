@@ -137,10 +137,13 @@ pub(crate) fn require_id(id: Option<&str>) -> MusicClientResult<&str> {
 
 fn parse_digit_u64(id: &str) -> MusicClientResult<u64> {
     let digit_str = id.trim();
-    if digit_str.is_empty() || !digit_str.bytes().all(|byte| byte.is_ascii_digit()) {
+    if digit_str.is_empty() {
         return Err(MusicClientError::MissingId);
     }
-    digit_str.parse::<u64>().map_err(|_| MusicClientError::MissingId)
+    if !digit_str.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(MusicClientError::InvalidIdFormat(digit_str.to_owned()));
+    }
+    digit_str.parse::<u64>().map_err(|_| MusicClientError::InvalidIdFormat(digit_str.to_owned()))
 }
 
 pub(crate) fn require_category(category: Option<&str>) -> MusicClientResult<&str> {
@@ -169,6 +172,6 @@ mod tests {
     #[test]
     fn music_id_input_try_into_id_u64_rejects_non_digit_str() {
         let err = "45a".try_into_id_u64().expect_err("non-digit string should be rejected");
-        assert!(matches!(err, MusicClientError::MissingId));
+        assert!(matches!(err, MusicClientError::InvalidIdFormat(value) if value == "45a"));
     }
 }

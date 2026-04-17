@@ -59,7 +59,7 @@ mod section_validation {
             .send()
             .await
             .expect_err("non-digit id should fail");
-        assert!(matches!(err, MusicClientError::MissingId));
+        assert!(matches!(err, MusicClientError::InvalidIdFormat(value) if value == "playlist-id"));
     }
 
     #[tokio::test(flavor = "current_thread")]
@@ -72,7 +72,7 @@ mod section_validation {
             .send()
             .await
             .expect_err("non-digit id should fail");
-        assert!(matches!(err, MusicClientError::MissingId));
+        assert!(matches!(err, MusicClientError::InvalidIdFormat(value) if value == "toplist-id"));
     }
 
     #[tokio::test(flavor = "current_thread")]
@@ -153,7 +153,7 @@ mod section_validation {
             .send()
             .await
             .expect_err("non-digit id should fail");
-        assert!(matches!(err, MusicClientError::MissingId));
+        assert!(matches!(err, MusicClientError::InvalidIdFormat(value) if value == "abc"));
     }
 
     #[tokio::test(flavor = "current_thread")]

@@ -140,7 +140,8 @@ impl<'a> PlaylistRequest<'a, PlaylistDetailKind> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingId`] - 未设置歌单 `id`，或 `id` 不是纯数字
+    /// - [`MusicClientError::MissingId`] - 未设置歌单 `id`
+    /// - [`MusicClientError::InvalidIdFormat`] - 歌单 `id` 不是纯数字
     /// - [`MusicClientError::AuthTokenPlatformMismatch`] - token 所属平台与请求平台不匹配
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn send(self) -> MusicClientResult<PlaylistDetailResult> {

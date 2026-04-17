@@ -4,7 +4,8 @@ use thiserror::Error;
 /// 音乐客户端统一错误类型。
 ///
 /// 所有公开异步请求都返回该错误类型，调用方可以按错误变体进行分级处理：
-/// - 参数校验错误（如 [`MusicClientError::MissingKeyword`]、[`MusicClientError::MissingId`]）
+/// - 参数校验错误（如 [`MusicClientError::MissingKeyword`]、[`MusicClientError::MissingId`]、
+///   [`MusicClientError::InvalidIdFormat`]）
 /// - 鉴权错误（如 [`MusicClientError::AuthTokenPlatformMismatch`]）
 /// - 平台登录流程错误（如 [`MusicClientError::TencentMqttLogin`]）
 /// - 网络错误（[`MusicClientError::NetworkError`]）
@@ -19,6 +20,9 @@ pub enum MusicClientError {
     /// 请求缺少必须的资源 ID。
     #[error("missing required id")]
     MissingId,
+    /// 资源 ID 格式非法（例如要求纯数字时传入了非数字）。
+    #[error("invalid id format: `{0}`")]
+    InvalidIdFormat(String),
     /// 请求缺少必须的分类参数。
     #[error("missing required category")]
     MissingCategory,
@@ -28,12 +32,6 @@ pub enum MusicClientError {
     /// 刷新登录 token 时缺少 refresh token。
     #[error("missing required refresh token")]
     MissingRefreshToken,
-    /// QQ 音乐登录会话不存在（需要先创建 session）。
-    #[error(
-        "missing tencent login session, call login().session().platform(Platform::Tencent).send() \
-         first"
-    )]
-    MissingTencentLoginSession,
     /// 用户取消了 QQ 音乐登录流程。
     #[error("tencent login was canceled by user")]
     TencentLoginCanceled,
@@ -60,9 +58,6 @@ pub enum MusicClientError {
         "token platform mismatch: expected `{expected_platform}`, got `{token_platform}` token"
     )]
     AuthTokenPlatformMismatch { expected_platform: &'static str, token_platform: &'static str },
-    /// 平台能力尚未实现。
-    #[error("platform `{0}` is not implemented yet")]
-    UnsupportedPlatform(&'static str),
 }
 
 /// 音乐客户端统一结果类型。

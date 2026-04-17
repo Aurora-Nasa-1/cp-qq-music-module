@@ -43,14 +43,18 @@ pub struct LoginSessionKind;
 /// 通过 [`Self::status`] 轮询扫码登录进度，调用 [`Self::qr_code`] 获取二维码图像内容。
 pub struct LoginSession<'a> {
     client: &'a MusicClient,
-    platform: Platform,
     qr: LoginQrResult,
-    tencent_session: Option<TencentLoginSession>,
+    state: LoginSessionState,
 }
 
 struct TencentLoginSession {
     qrcode_id: String,
     mqtt: Mutex<TencentMqttLoginSession>,
+}
+
+enum LoginSessionState {
+    Netease,
+    Tencent(Box<TencentLoginSession>),
 }
 
 impl TencentLoginSession {
@@ -65,7 +69,10 @@ impl TencentLoginSession {
 impl<'a> LoginSession<'a> {
     /// 返回当前登录会话所属平台。
     pub fn platform(&self) -> Platform {
-        self.platform
+        match &self.state {
+            LoginSessionState::Netease => Platform::Netease,
+            LoginSessionState::Tencent(_) => Platform::Tencent,
+        }
     }
 
     /// 返回二维码图像内容（`data:image/png;base64,...`）。
@@ -87,7 +94,6 @@ impl<'a> LoginSession<'a> {
     ///
     /// # Errors
     ///
-    /// - [`MusicClientError::MissingTencentLoginSession`] - QQ 平台会话缺失
     /// - [`MusicClientError::NeteaseUnexpectedLoginStatus`] - 网易登录状态码异常
     /// - [`MusicClientError::NeteaseLoginTokenInvalid`] - 网易登录成功但 token cookie 解析失败
     /// - [`MusicClientError::TencentLoginCanceled`] - QQ 登录被用户取消
@@ -95,13 +101,9 @@ impl<'a> LoginSession<'a> {
     /// - [`MusicClientError::TencentMqttLogin`] - QQ MQTT 登录链路失败
     /// - [`MusicClientError::NetworkError`] - 网络请求失败
     pub async fn status(&self) -> MusicClientResult<LoginStatus> {
-        match self.platform {
-            Platform::Netease => self.client.netease.get_login_token(self.qr_key()).await,
-            Platform::Tencent => {
-                let session = self
-                    .tencent_session
-                    .as_ref()
-                    .ok_or(MusicClientError::MissingTencentLoginSession)?;
+        match &self.state {
+            LoginSessionState::Netease => self.client.netease.get_login_token(self.qr_key()).await,
+            LoginSessionState::Tencent(session) => {
                 let mut mqtt = session.mqtt.lock().await;
                 self.client
                     .tencent
@@ -190,9 +192,13 @@ impl<'a> LoginRequest<'a, LoginSessionKind> {
             Platform::Netease => self.client.netease.get_login_qrcode().await?,
             Platform::Tencent => self.client.tencent.get_login_qrcode().await?,
         };
-        let tencent_session = matches!(self.platform, Platform::Tencent)
-            .then(|| TencentLoginSession::new(qr.qr_key.as_str()));
-        Ok(LoginSession { client: self.client, platform: self.platform, qr, tencent_session })
+        let state = match self.platform {
+            Platform::Netease => LoginSessionState::Netease,
+            Platform::Tencent => {
+                LoginSessionState::Tencent(Box::new(TencentLoginSession::new(qr.qr_key.as_str())))
+            }
+        };
+        Ok(LoginSession { client: self.client, qr, state })
     }
 }
 
