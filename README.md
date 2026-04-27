@@ -10,9 +10,10 @@
 ---
 
 > [!IMPORTANT]
-> 本项目内容仅用于学习与技术研究，禁止用于商业用途或任何侵权场景。  
+> 本库仅提供音乐平台 API 调用封装，不提供、存储或分发任何音乐内容，也不授予任何平台内容、账号、数据或版权的使用权。
 > 请遵守当地法律法规及平台服务条款，尊重版权并支持正版。  
-> 请勿将本项目用于绕过付费/会员限制、批量下载、未授权传播或再分发音乐内容。  
+> 使用者应自行确保其使用方式符合适用法律法规、平台服务条款和权利人授权。
+> 请勿将本库用于绕过付费/会员限制、批量下载、未授权传播或再分发音乐内容。
 > 因使用或无法使用本项目产生的风险与责任，由使用者自行承担。
 
 ---
@@ -245,7 +246,7 @@ async fn refresh_demo(client: &MusicClient) -> Result<(), netease_qq_music_api::
 
 - 参数缺失：`MissingKeyword`、`MissingId`、`MissingCategory`、`MissingRefreshToken`
 - 鉴权不匹配：`AuthTokenPlatformMismatch`
-- 登录链路：`MissingTencentLoginSession`、`TencentLoginCanceled`、`TencentMqttLogin` 等
+- 登录链路：`TencentLoginCanceled`、`TencentLoginFailed`、`TencentMqttLogin` 等
 - 网络错误：`NetworkError`
 
 示例：

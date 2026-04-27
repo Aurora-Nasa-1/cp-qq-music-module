@@ -11,7 +11,7 @@ repository = "https://github.com/AstronW/netease-qq-music-api"
 license = "MIT"
 keywords = ["api", "async", "music", "netease", "qqmusic"]
 categories = ["api-bindings", "asynchronous"]
-exclude = [".idea/*", "AGENTS.md", "Cargo.lock", "target/*"]
+exclude = [".idea/*", "AGENTS.md", "Cargo.lock", "target/*", "rustfmt.toml", ".gitignore"]
 
 [dependencies]
 aes = "0.8"
