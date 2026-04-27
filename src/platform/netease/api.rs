@@ -38,6 +38,7 @@ const EAPI_COOKIE_SUFFIX: &str =
      453832335F384641365F424635335F303030315F303031425F343434415F343643365F333638332@@@@@@\
      6ff673ef74955b38bce2fa8562d95c976ed4758b1227c4e9ee345987cee17bc9; channel=netease";
 const HTTP_TIMEOUT: Duration = Duration::from_secs(15);
+const SONG_DETAIL_BATCH_SIZE: usize = 1000;
 
 pub(crate) struct NeteaseClient {
     client: Client,
@@ -271,8 +272,20 @@ impl NeteaseClient {
             )
             .await?;
         let ids = response.song_ids();
-        let songs = self.songs_detail(ids, token).await?.songs;
+        let songs = self.songs_detail_in_batches(ids, token).await?;
         Ok(response.into_with_songs(songs))
+    }
+
+    async fn songs_detail_in_batches(
+        &self,
+        ids: Vec<String>,
+        token: Option<&NeteaseLoginToken>,
+    ) -> MusicClientResult<Vec<Song>> {
+        let mut songs = Vec::with_capacity(ids.len());
+        for chunk in ids.chunks(SONG_DETAIL_BATCH_SIZE) {
+            songs.extend(self.songs_detail(chunk.to_vec(), token).await?.songs);
+        }
+        Ok(songs)
     }
 
     pub(crate) async fn get_lyric(

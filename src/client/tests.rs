@@ -211,6 +211,7 @@ mod section_live_smoke {
     use super::*;
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_search_song_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -227,6 +228,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_search_song_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -243,6 +245,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_search_artist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -259,6 +262,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_search_artist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -275,6 +279,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_search_album_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -291,6 +296,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_search_album_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -307,6 +313,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_search_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -323,6 +330,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_search_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -339,6 +347,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_detail_songs_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -364,6 +373,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_detail_songs_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -390,6 +400,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_detail_artist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -408,6 +419,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_detail_artist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -426,6 +438,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_detail_album_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -444,6 +457,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_detail_album_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -462,6 +476,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_detail_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -480,6 +495,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_detail_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -498,6 +514,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_detail_toplist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -514,6 +531,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_detail_toplist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -530,6 +548,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_playback_url_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -548,6 +567,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_playback_url_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -564,6 +584,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_playback_lyric_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -578,6 +599,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_playback_lyric_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -592,6 +614,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_discover_hotkey_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -605,6 +628,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_discover_hotkey_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -618,6 +642,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_discover_recommend_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -631,6 +656,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_discover_recommend_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -644,6 +670,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_discover_toplist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -658,6 +685,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_discover_toplist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -672,6 +700,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_discover_categories_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -688,6 +717,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_discover_categories_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -704,6 +734,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_discover_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -718,6 +749,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_discover_playlist_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -732,6 +764,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn netease_discover_suggests_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
@@ -746,6 +779,7 @@ mod section_live_smoke {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[ignore = "requires live network"]
     async fn tencent_discover_suggests_returns_correct_response() {
         let client = MusicClient::new();
         let response = client
