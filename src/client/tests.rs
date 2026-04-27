@@ -472,8 +472,8 @@ mod section_live_smoke {
             .send()
             .await
             .expect("detail should succeed");
-        assert_eq!(response.songs[0].id, "25642214");
-        assert_eq!(response.songs[0].name, "爱错(Live)");
+        assert_eq!(response.songs[0].id, "299601");
+        assert_eq!(response.songs[0].name, "笑忘书");
         assert_eq!(response.name, "失败总是贯穿人生");
         assert!(response.description.starts_with("相逢如骤雨初晴"));
         assert!(!response.pic_url.is_empty())
@@ -829,6 +829,7 @@ mod section_live_level_url_with_env_login {
             SongQuality::Exhigh,
             SongQuality::Lossless,
             SongQuality::Hires,
+            SongQuality::Stereo,
             SongQuality::Surround,
             SongQuality::Master,
         ];
@@ -867,6 +868,7 @@ mod section_live_level_url_with_env_login {
             SongQuality::Exhigh,
             SongQuality::Lossless,
             SongQuality::Hires,
+            SongQuality::Stereo,
             SongQuality::Surround,
             SongQuality::Master,
         ];

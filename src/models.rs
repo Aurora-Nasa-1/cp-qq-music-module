@@ -341,7 +341,7 @@ pub(crate) struct LoginQrResult {
 pub enum SongQuality {
     /// 超清母带.
     Master,
-    /// 全景声.
+    /// 环绕声.
     Surround,
     /// 立体声.
     Stereo,

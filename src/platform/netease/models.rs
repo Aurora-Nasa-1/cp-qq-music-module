@@ -382,8 +382,9 @@ impl From<NUrlResponse> for UrlResult {
                 level: match item.level.as_deref() {
                     Some("jymaster") => SongQuality::Master,
                     Some("sky") => SongQuality::Surround,
+                    Some("jyeffect") => SongQuality::Stereo,
                     Some("hires") => SongQuality::Hires,
-                    Some("jyeffect") | Some("lossless") => SongQuality::Lossless,
+                    Some("lossless") => SongQuality::Lossless,
                     Some("exhigh") => SongQuality::Exhigh,
                     Some("standard") | Some(_) | None => SongQuality::Standard,
                 },

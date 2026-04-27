@@ -52,8 +52,10 @@ fn parse_song_quality(filename: &str) -> SongQuality {
     // 前缀由高到低匹配，与 get_url 里请求的候选文件名约定保持一致。
     if filename.starts_with("AI00") {
         SongQuality::Master
-    } else if filename.starts_with("Q001") | filename.starts_with("Q000") {
+    } else if filename.starts_with("Q001") {
         SongQuality::Surround
+    } else if filename.starts_with("Q000") {
+        SongQuality::Stereo
     } else if filename.starts_with("F000") {
         SongQuality::Lossless
     } else if filename.starts_with("M800") {
