@@ -1,15 +1,15 @@
 [package]
-name = "music-bridge-rs"
+name = "netease-qq-music-api"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Unified async client for Netease Cloud Music and QQ Music"
-documentation = "https://docs.rs/music-bridge-rs"
+description = "Unified async API bindings for Netease Cloud Music and QQ Music"
+documentation = "https://docs.rs/netease-qq-music-api"
 readme = "README.md"
-homepage = "https://github.com/AstronW/music-bridge-rs"
-repository = "https://github.com/AstronW/music-bridge-rs"
+homepage = "https://github.com/AstronW/netease-qq-music-api"
+repository = "https://github.com/AstronW/netease-qq-music-api"
 license = "MIT"
-keywords = ["api", "async", "music", "netease", "tencent"]
+keywords = ["api", "async", "music", "netease", "qqmusic"]
 categories = ["api-bindings", "asynchronous"]
 exclude = [".idea/*", "AGENTS.md", "Cargo.lock", "target/*"]
 

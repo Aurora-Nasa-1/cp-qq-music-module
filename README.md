@@ -1,6 +1,6 @@
-# music-bridge-rs
+# netease-qq-music-api
 
-统一的异步音乐客户端，提供网易云音乐与 QQ 音乐的一致化调用接口。
+统一的异步音乐 API 封装库，提供网易云音乐与 QQ 音乐的一致化调用接口。
 
 - 统一入口：`MusicClient`
 - 统一模型：`models`
@@ -27,18 +27,18 @@
 
 ```toml
 [dependencies]
-music-bridge-rs = "0.1"
+netease-qq-music-api = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 ```
 
 ## 快速开始
 
 ```rust
-use music_bridge_rs::MusicClient;
-use music_bridge_rs::models::Platform;
+use netease_qq_music_api::MusicClient;
+use netease_qq_music_api::models::Platform;
 
 #[tokio::main]
-async fn main() -> Result<(), music_bridge_rs::MusicClientError> {
+async fn main() -> Result<(), netease_qq_music_api::MusicClientError> {
     let client = MusicClient::new();
 
     let result = client
@@ -87,10 +87,10 @@ async fn main() -> Result<(), music_bridge_rs::MusicClientError> {
 ### 搜索
 
 ```rust
-use music_bridge_rs::MusicClient;
-use music_bridge_rs::models::Platform;
+use netease_qq_music_api::MusicClient;
+use netease_qq_music_api::models::Platform;
 
-async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientError> {
+async fn demo(client: &MusicClient) -> Result<(), netease_qq_music_api::MusicClientError> {
     let songs = client
         .search()
         .song()
@@ -109,10 +109,10 @@ async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientEr
 ### 详情与播放
 
 ```rust
-use music_bridge_rs::MusicClient;
-use music_bridge_rs::models::{Platform, SongQuality};
+use netease_qq_music_api::MusicClient;
+use netease_qq_music_api::models::{Platform, SongQuality};
 
-async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientError> {
+async fn demo(client: &MusicClient) -> Result<(), netease_qq_music_api::MusicClientError> {
     let artist = client
         .detail()
         .artist()
@@ -146,10 +146,10 @@ async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientEr
 ### 发现与歌单
 
 ```rust
-use music_bridge_rs::MusicClient;
-use music_bridge_rs::models::Platform;
+use netease_qq_music_api::MusicClient;
+use netease_qq_music_api::models::Platform;
 
-async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientError> {
+async fn demo(client: &MusicClient) -> Result<(), netease_qq_music_api::MusicClientError> {
     let suggests = client
         .discover()
         .suggests()
@@ -174,10 +174,10 @@ async fn demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientEr
 ### 二维码登录与轮询状态
 
 ```rust
-use music_bridge_rs::MusicClient;
-use music_bridge_rs::models::{LoginStatus, Platform};
+use netease_qq_music_api::MusicClient;
+use netease_qq_music_api::models::{LoginStatus, Platform};
 
-async fn login_demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientError> {
+async fn login_demo(client: &MusicClient) -> Result<(), netease_qq_music_api::MusicClientError> {
     let session = client
         .login()
         .session()
@@ -210,10 +210,10 @@ async fn login_demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicCl
 ### 刷新登录态
 
 ```rust
-use music_bridge_rs::MusicClient;
-use music_bridge_rs::models::{LoginToken, Platform, TencentLoginToken};
+use netease_qq_music_api::MusicClient;
+use netease_qq_music_api::models::{LoginToken, Platform, TencentLoginToken};
 
-async fn refresh_demo(client: &MusicClient) -> Result<(), music_bridge_rs::MusicClientError> {
+async fn refresh_demo(client: &MusicClient) -> Result<(), netease_qq_music_api::MusicClientError> {
     let token = TencentLoginToken::new(
         123456,
         "music_key",
@@ -251,8 +251,8 @@ async fn refresh_demo(client: &MusicClient) -> Result<(), music_bridge_rs::Music
 示例：
 
 ```rust
-use music_bridge_rs::MusicClient;
-use music_bridge_rs::error::MusicClientError;
+use netease_qq_music_api::MusicClient;
+use netease_qq_music_api::error::MusicClientError;
 
 async fn error_demo(client: &MusicClient) {
     let result = client.search().song().send().await;
@@ -270,9 +270,9 @@ async fn error_demo(client: &MusicClient) {
 
 ## 文档与链接
 
-- Crates.io: <https://crates.io/crates/music-bridge-rs>
-- Docs.rs: <https://docs.rs/music-bridge-rs>
-- Repository: <https://github.com/AstronW/music-bridge-rs>
+- Crates.io: <https://crates.io/crates/netease-qq-music-api>
+- Docs.rs: <https://docs.rs/netease-qq-music-api>
+- Repository: <https://github.com/AstronW/netease-qq-music-api>
 
 ## 参考与致谢
 

@@ -1,4 +1,4 @@
-//! 网易云与 QQ 音乐的统一异步客户端库。
+//! 网易云与 QQ 音乐的统一异步 API 封装库。
 //!
 //! # Overview
 //!
@@ -9,8 +9,8 @@
 //! # Quick Start
 //!
 //! ```no_run
-//! # async fn run() -> Result<(), music_bridge_rs::MusicClientError> {
-//! let client = music_bridge_rs::MusicClient::new();
+//! # async fn run() -> Result<(), netease_qq_music_api::MusicClientError> {
+//! let client = netease_qq_music_api::MusicClient::new();
 //! let result = client.search().song().keyword("江南").limit(10).send().await?;
 //! println!("songs: {}", result.songs.len());
 //! # Ok(())
@@ -56,7 +56,7 @@
 //! - [`models`] - 跨平台统一数据模型。
 //! - [`error`] - 统一错误类型与结果别名。
 
-/// 对外请求构建器与客户端入口模块。
+/// 对外请求构建器与 API 入口模块。
 pub mod client;
 /// 全局统一错误定义模块。
 pub mod error;
@@ -64,7 +64,7 @@ pub mod error;
 pub mod models;
 mod platform;
 
-/// 统一异步客户端入口。
+/// 统一异步 API 入口。
 pub use client::MusicClient;
 /// 对外暴露的错误与结果类型别名。
 pub use error::{MusicClientError, MusicClientResult};

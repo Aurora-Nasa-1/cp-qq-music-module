@@ -9,8 +9,8 @@
 //! # Quick Start
 //!
 //! ```no_run
-//! # async fn run() -> Result<(), music_bridge_rs::MusicClientError> {
-//! let client = music_bridge_rs::MusicClient::new();
+//! # async fn run() -> Result<(), netease_qq_music_api::MusicClientError> {
+//! let client = netease_qq_music_api::MusicClient::new();
 //! let artist = client.detail().artist().id("3684").limit(10).send().await?;
 //! println!("artist: {}", artist.name);
 //! # Ok(())

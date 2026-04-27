@@ -8,8 +8,8 @@
 //! # Quick Start
 //!
 //! ```no_run
-//! # async fn run() -> Result<(), music_bridge_rs::MusicClientError> {
-//! let client = music_bridge_rs::MusicClient::new();
+//! # async fn run() -> Result<(), netease_qq_music_api::MusicClientError> {
+//! let client = netease_qq_music_api::MusicClient::new();
 //! let session = client.login().session().send().await?;
 //! println!("qr code: {}", session.qr_code());
 //! # Ok(())
@@ -175,12 +175,12 @@ impl<'a> LoginRequest<'a, LoginSessionKind> {
     /// # Examples
     ///
     /// ```no_run
-    /// # async fn run() -> Result<(), music_bridge_rs::MusicClientError> {
-    /// let client = music_bridge_rs::MusicClient::new();
+    /// # async fn run() -> Result<(), netease_qq_music_api::MusicClientError> {
+    /// let client = netease_qq_music_api::MusicClient::new();
     /// let session = client
     ///     .login()
     ///     .session()
-    ///     .platform(music_bridge_rs::models::Platform::Tencent)
+    ///     .platform(netease_qq_music_api::models::Platform::Tencent)
     ///     .send()
     ///     .await?;
     /// assert!(!session.qr_code().is_empty());

@@ -1,13 +1,13 @@
 # AGENTS.md
 
-本文件用于指导在 `music-bridge-rs` 仓库内工作的智能体与协作者，确保改动可维护、可验证、且不破坏现有 API 行为。
+本文件用于指导在 `netease-qq-music-api` 仓库内工作的智能体与协作者，确保改动可维护、可验证、且不破坏现有 API 行为。
 
 ## 1. 项目概览
 
 - 项目类型：Rust library（`edition = "2024"`）
-- 包名：`music-bridge-rs`
-- crate 路径名：`music_bridge_rs`
-- 目标：提供统一的音乐客户端接口，封装网易云（Netease）与 QQ 音乐（Tencent）相关能力（搜索、详情、播放、登录、歌单、发现等）
+- 包名：`netease-qq-music-api`
+- crate 路径名：`netease_qq_music_api`
+- 目标：提供统一的音乐 API 调用接口，封装网易云（Netease）与 QQ 音乐（Tencent）相关能力（搜索、详情、播放、登录、歌单、发现等）
 
 ## 2. 代码结构与职责
 

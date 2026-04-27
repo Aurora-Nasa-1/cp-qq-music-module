@@ -8,8 +8,8 @@
 //! # Quick Start
 //!
 //! ```no_run
-//! # async fn run() -> Result<(), music_bridge_rs::MusicClientError> {
-//! let client = music_bridge_rs::MusicClient::new();
+//! # async fn run() -> Result<(), netease_qq_music_api::MusicClientError> {
+//! let client = netease_qq_music_api::MusicClient::new();
 //! let lyric = client.playback().lyric().id("108914").send().await?;
 //! println!("lyric len: {}", lyric.lyric.len());
 //! # Ok(())
@@ -87,8 +87,8 @@ mod tests;
 /// # Examples
 ///
 /// ```no_run
-/// # async fn run() -> Result<(), music_bridge_rs::MusicClientError> {
-/// let client = music_bridge_rs::MusicClient::new();
+/// # async fn run() -> Result<(), netease_qq_music_api::MusicClientError> {
+/// let client = netease_qq_music_api::MusicClient::new();
 /// let result = client.search().song().keyword("林俊杰").send().await?;
 /// println!("found: {}", result.songs.len());
 /// # Ok(())

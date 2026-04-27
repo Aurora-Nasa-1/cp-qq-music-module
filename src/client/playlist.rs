@@ -8,8 +8,8 @@
 //! # Quick Start
 //!
 //! ```no_run
-//! # async fn run() -> Result<(), music_bridge_rs::MusicClientError> {
-//! let client = music_bridge_rs::MusicClient::new();
+//! # async fn run() -> Result<(), netease_qq_music_api::MusicClientError> {
+//! let client = netease_qq_music_api::MusicClient::new();
 //! let detail = client.playlist().detail().id(8903867087).send().await?;
 //! println!("playlist: {}", detail.name);
 //! # Ok(())
