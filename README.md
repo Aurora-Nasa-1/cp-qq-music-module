@@ -190,8 +190,8 @@ async fn login_demo(client: &MusicClient) -> Result<(), netease_qq_music_api::Mu
 
     loop {
         match session.status().await? {
-            LoginStatus::Success(token) => {
-                println!("login success: {:?}", token);
+            LoginStatus::Success(_) => {
+                println!("login success");
                 break;
             }
             LoginStatus::QrCodeExpired => {
