@@ -60,6 +60,11 @@
 pub mod client;
 /// 全局统一错误定义模块。
 pub mod error;
+/// CPPlayer 音源模块（JNI）入口 —— 仅在 `jni` feature 下编译。
+///
+/// 见 [`jni`] 模块文档；构建方式见仓库 `scripts/` 与 `docs/CPPLAYER_MODULE.md`。
+#[cfg(feature = "jni")]
+pub mod jni;
 /// 跨平台统一数据模型模块。
 pub mod models;
 mod platform;

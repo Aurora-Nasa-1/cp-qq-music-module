@@ -1050,6 +1050,7 @@ dependencies = [
  "futures-util",
  "hex",
  "image",
+ "jni",
  "md5",
  "qrcode",
  "rand 0.10.0",

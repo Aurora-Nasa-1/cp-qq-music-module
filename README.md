@@ -2,6 +2,11 @@
 
 统一的异步音乐 API 封装库，提供网易云音乐与 QQ 音乐的一致化调用接口。
 
+> **本仓库是 CPPlayer 音源模块发行版**：在上游库
+> [AstronW/netease-qq-music-api](https://github.com/AstronW/netease-qq-music-api) 的基础上，
+> 增加了 **JNI 入口**与打包脚本，可直接编译成 CPPlayer 的 **QQ 音乐**音源模块
+> （Android + 桌面）。构建与契约见 [docs/CPPLAYER_MODULE.md](docs/CPPLAYER_MODULE.md)。
+
 - 统一入口：`MusicClient`
 - 统一模型：`models`
 - 统一错误：`MusicClientError`
@@ -268,6 +273,26 @@ async fn error_demo(client: &MusicClient) {
     }
 }
 ```
+
+## 作为 CPPlayer 音源模块
+
+本库可直接编译成 **CPPlayer 音源模块**（Provider 插件），支持 **Android** 与 **桌面端**
+（Windows / Linux / macOS）。完整说明见 [`docs/CPPLAYER_MODULE.md`](docs/CPPLAYER_MODULE.md)。
+
+```bash
+# Android（需要 cargo-ndk + Android NDK）
+./scripts/build_module_android.sh
+
+# Windows 桌面（需要 MSVC + Windows SDK；脚本自动定位工具链）
+powershell -File scripts/build_module_desktop.ps1
+
+# Linux / macOS 桌面
+./scripts/build_module_desktop.sh
+```
+
+产物是可直接在应用内导入的 zip（`target/cp_qq_module_*.zip`）。JNI 入口在
+[`src/jni.rs`](src/jni.rs)，仅在 `--features jni` 下编译；模块清单见
+[`packaging/manifest.json`](packaging/manifest.json)。
 
 ## 文档与链接
 
