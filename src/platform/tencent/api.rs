@@ -41,8 +41,8 @@ impl TencentClient {
     }
 
     fn page_num(offset: u64, limit: u64) -> u64 {
-        // Tencent 搜索分页从 1 开始，limit=0 时兜底到第一页，避免除零。
-        if limit == 0 { 1 } else { offset / limit + 1 }
+        // Tencent 搜索分页从 1 开始；limit=0 时兜底到第一页（`checked_div` 顺带避免除零）。
+        offset.checked_div(limit).map_or(1, |page| page + 1)
     }
 
     async fn post<T: serde::de::DeserializeOwned>(
