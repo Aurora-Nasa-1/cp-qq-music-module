@@ -71,6 +71,9 @@ struct TSong {
     name: String,
     singer: Vec<TSongSinger>,
     album: TSongAlbum,
+    /// 时长（**秒**）。部分端点不返回，缺省 0。
+    #[serde(default)]
+    interval: u64,
 }
 
 #[derive(Deserialize)]
@@ -100,6 +103,8 @@ impl From<TSong> for Song {
             artists: collect_into(value.singer),
             album: SongAlbum { id: value.album.mid, name: value.album.name },
             pic_url: tencent_album_pic_url(value.album.pmid.as_str()),
+            // QQ 音乐 `interval` 的单位是秒，统一模型用毫秒。
+            duration_ms: value.interval.saturating_mul(1000),
         }
     }
 }

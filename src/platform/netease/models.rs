@@ -37,6 +37,9 @@ struct NSong {
     artists: Vec<NSongArtist>,
     #[serde(rename = "al", alias = "album")]
     album: NSongAlbum,
+    /// 时长（毫秒）。部分端点（如云盘 `simpleSong`）不返回，缺省 0。
+    #[serde(default)]
+    dt: u64,
 }
 
 #[derive(Deserialize)]
@@ -74,6 +77,7 @@ impl From<NSong> for Song {
                 .collect(),
             album: SongAlbum { id: value.album.id.to_string(), name: value.album.name },
             pic_url: value.album.pic_url,
+            duration_ms: value.dt,
         }
     }
 }

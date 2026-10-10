@@ -68,6 +68,12 @@ pub struct Song {
     pub artists: Vec<SongArtist>,
     /// 所属专辑。
     pub album: SongAlbum,
+    /// 歌曲时长（毫秒）。
+    ///
+    /// 网易云取响应里的 `dt`；QQ 音乐取 `interval`（秒）× 1000。
+    /// 平台未提供该字段时为 `0`（`#[serde(default)]` 保证反序列化旧数据不失败）。
+    #[serde(default)]
+    pub duration_ms: u64,
 }
 
 /// 歌曲中的歌手信息。
