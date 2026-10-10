@@ -1,0 +1,68 @@
+name: Android module
+
+# 构建 CPPlayer 的 QQ 音乐音源模块（Android 多 ABI），产出可直接导入的 zip。
+#
+# - push tag `v*`  → 构建并**附到该 tag 的 GitHub Release**（与桌面包同一个 Release）
+# - 手动触发      → 只上传为 workflow artifact（不发 Release）
+#
+# 说明：Android 侧需要在 Linux 上交叉编译，所以单独一个 workflow；
+# 桌面端的打包脚本见 scripts/build_module_desktop.{ps1,sh}（在各自原生机器上跑）。
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+# 上传 Release 资产需要 contents: write。
+permissions:
+  contents: write
+
+# 同一个 tag 重复推送 / 手动重复触发时，串行而不是并发。
+concurrency:
+  group: android-module-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  # NDK 版本：与 cargo-ndk 兼容即可；改这里要同步确认 cargo-ndk 支持。
+  NDK_VERSION: r27c
+  # Android 15+ 要求 16KB 页面对齐（脚本里也会再兜一次，双保险）。
+  RUSTFLAGS: "-C link-arg=-Wl,-z,max-page-size=16384"
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked
+
+      - name: Set up Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: ${{ env.NDK_VERSION }}
+
+      - name: Build module package
+        run: ./scripts/build_module_android.sh
+
+      - name: Upload module zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp_qq_module_android
+          path: target/cp_qq_module_android.zip
+          if-no-files-found: error
+
+      # 只有 tag 触发才发 Release。`tag_name` 故意不写：默认用当前 ref，
+      # 而本 job 在非 tag 时不会走到这一步。
+      - name: Attach to release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/cp_qq_module_android.zip
