@@ -1,0 +1,10 @@
+# 统一换行：默认 LF，避免 .sh 在 Windows 上被检出成 CRLF（shebang 会失效）。
+* text=auto eol=lf
+
+# Windows 脚本保持 CRLF。
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Shell 脚本固定 LF。
+*.sh text eol=lf
